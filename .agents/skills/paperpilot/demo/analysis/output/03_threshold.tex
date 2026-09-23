@@ -1,0 +1,44 @@
+% 面板门槛回归结果 (Python, 2026-06-17T15:02)
+\begin{table}[htbp]
+\centering
+\caption{面板门槛回归：urbanization\_rate的调节效应\label{tab:threshold}}
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{3}{c}}
+\toprule
+& \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} \\
+& \multicolumn{1}{c}{全样本门槛} & \multicolumn{1}{c}{低urbanization\_rate} & \multicolumn{1}{c}{高urbanization\_rate} \\
+\midrule
+digital\_economy\_index $\times$ 低门槛组 & 0.236\sym{**} &  &  \\
+  & (0.098) &  &  \\
+\addlinespace
+digital\_economy\_index $\times$ 高门槛组 & 0.384\sym{***} &  &  \\
+  & (0.083) &  &  \\
+\addlinespace
+digital\_economy\_index &  & 0.146\sym{**} & 0.462 \\
+  &  & (0.069) & (0.520) \\
+\addlinespace
+gdp\_percapita & -0.000 & -0.000\sym{*} & -0.000 \\
+  & (0.000) & (0.000) & (0.000) \\
+fixed\_capital\_investment & -0.020 & 0.001 & 0.112 \\
+  & (0.026) & (0.027) & (0.143) \\
+export\_share & -0.007 & 0.017 & 0.501\sym{***} \\
+  & (0.077) & (0.117) & (0.069) \\
+government\_expenditure & 0.002 & -0.001 & 0.100\sym{**} \\
+  & (0.003) & (0.003) & (0.038) \\
+internet\_penetration & -0.023 & 0.027 & 0.497 \\
+  & (0.031) & (0.031) & (0.297) \\
+mobile\_phone\_penetration & 0.001\sym{**} & 0.001 & -0.002 \\
+  & (0.000) & (0.000) & (0.001) \\
+education\_expenditure & 0.000 & 0.000\sym{**} & 0.001 \\
+  & (0.000) & (0.000) & (0.001) \\
+education\_share & 1.523 & 0.744 & -39.096 \\
+  & (0.957) & (0.737) & (22.788) \\
+\midrule
+样本量 & 403 & 366 & 37 \\
+R² & 0.0765 & & \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize 注：门槛变量为urbanization\_rate，最优门槛值为0.8185。}\\
+\multicolumn{4}{l}{\footnotesize 全样本门槛回归同时包含低/高两组数字经济的交互项。}\\
+\multicolumn{4}{l}{\footnotesize * $p<0.10$, ** $p<0.05$, *** $p<0.01$}\\
+\end{tabular}
+\end{table}

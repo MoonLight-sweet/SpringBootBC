@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools==81.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperpilot"
+dynamic = ["version"]
+description = "PaperPilot — agent skills for academic research, from topic exploration to publication"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "DGU-stallion"}]
+keywords = ["research", "academic", "agent-skills", "paper-writing", "literature-review", "case-study"]
+dependencies = []
+
+[project.optional-dependencies]
+standard = [
+  "numpy==2.4.6",
+  "pandas==3.0.3",
+  "openpyxl==3.1.5",
+  "pyarrow==24.0.0",
+]
+dev = [
+  "pytest>=9.0",
+]
+
+[project.scripts]
+pp = "scripts.pipeline:main"
+
+[project.urls]
+Homepage = "https://github.com/DGU-stallion/PaperPilot"
+Repository = "https://github.com/DGU-stallion/PaperPilot"
+
+[tool.setuptools.dynamic]
+version = {attr = "scripts.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["scripts*", "install*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

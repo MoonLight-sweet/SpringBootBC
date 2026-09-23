@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "paper-search-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "paper-search-mcp",
+        "python",
+        "-m",
+        "paper_search_mcp.server"
+      ]
+    },
+    "stata-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-stata"
+      ],
+      "env": {}
+    }
+  }
+}

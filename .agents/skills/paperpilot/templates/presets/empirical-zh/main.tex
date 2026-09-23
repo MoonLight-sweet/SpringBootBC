@@ -1,0 +1,49 @@
+% ============================================================
+% 《经济研究》格式论文主文件（模板框架）
+% 编译: xelatex -> biber -> xelatex -> xelatex
+% ============================================================
+\documentclass{chinese-erj}
+\usepackage{booktabs}
+
+% ---- 论文元信息（按需修改）----
+\title{论文标题%
+    \thanks{通讯作者：xxx，邮箱：xxx@xxx.edu.cn。}}
+\author{作者姓名}
+\header{论文标题}
+
+% ---- 英文元信息（按需修改）----
+\entitle{English Title}
+\enauthor{Author Name}
+\eninstitute{Institute Name}
+\enabstract{Abstract here.}
+\enkeywords{Keyword1; Keyword2; Keyword3}
+\jel{JEL Classification: Xxx; Yyy}
+
+\begin{document}
+
+% ===== 中文标题页 =====
+\maketitle
+
+\begin{abstract}
+本文基于\ldots\ldots，采用\ldots\ldots方法，实证检验\ldots\ldots的影响。
+研究发现：（1）\ldots\ldots；（2）\ldots\ldots。
+本文的边际贡献在于\ldots\ldots。
+
+\keywords{关键词1；关键词2；关键词3}
+\end{abstract}
+
+% ===== 正文 =====
+\input{sections/01_introduction.tex}
+\input{sections/02_literature.tex}
+\input{sections/03_model.tex}
+\input{sections/04_empirical_results.tex}
+\input{sections/05_conclusion.tex}
+
+% ===== 参考文献 =====
+\erjref
+\printbibliography[heading=none]
+
+% ===== 英文标题页 =====
+\enmaketitle
+
+\end{document}

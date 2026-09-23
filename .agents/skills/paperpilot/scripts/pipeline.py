@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+pipeline.py — 后向兼容入口
+
+所有功能委托给 orchestrator.py + modules/。
+保留作为老接口的兼容层，新功能通过 orchestrator 或 modules 直接访问。
+"""
+
+from __future__ import annotations
+import sys
+import json
+from pathlib import Path
+
+# 将项目根目录加入 sys.path，确保模块导入正确
+_PROJECT_ROOT = Path(__file__).parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from scripts.shared.registry import get_registry, reset_registry
+from scripts.shared.state import (
+    load as load_state,
+    save as save_state,
+    get_current_project,
+    set_current_project,
+    list_projects,
+    get_project_path,
+)
+from scripts.orchestrator import Orchestrator
+
+# ── 注册所有模块 ──
+def _init_registry():
+    reset_registry()
+    reg = get_registry()
+    for mod_name in [
+        "conceptualize", "research", "literature", "data",
+        "analyze", "verify", "write", "format",
+    ]:
+        mod = __import__(f"scripts.modules.{mod_name}", fromlist=["MODULE_CONTRACT"])
+        reg.register(mod.MODULE_CONTRACT)
+    return reg
+
+_registry = _init_registry()
+_orch = Orchestrator(_registry)
+
+
+# ── 兼容函数 ──
+
+def cmd_list(args=None):
+    projects = _orch.list_projects()
+    current = get_current_project()
+    print(f"共有 {len(projects)} 个项目:\n")
+    for p in projects:
+        marker = "*" if p.get("is_current") else " "
+        print(f" {marker} {p['name']:40s} -> {p['current_state']}")
+
+
+def cmd_new(args):
+    if len(args) < 3:
+        print("用法: python pipeline.py new <项目名>")
+        return
+    result = _orch.new_project(args[2])
+    if result["ok"]:
+        print(f"✅ 项目 '{result['project']}' 创建成功")
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_use(args):
+    if len(args) < 3:
+        print("用法: python pipeline.py use <项目名>")
+        return
+    result = _orch.use_project(args[2])
+    if result["ok"]:
+        print(f"✅ 已切换到项目 '{result['project']}'")
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_status(args=None):
+    name = args[2] if len(args) > 2 else None
+    result = _orch.get_status(name)
+    if not result["ok"]:
+        print(result["error"])
+        return
+    print(f"📍 {result['project']}")
+    print(f"   当前状态: {result['current_state']}")
+    print(f"   所属模块: {result['module']}")
+    print(f"   已完成阶段: {result['completed_stages']}")
+
+
+def cmd_advance(args):
+    target = args[2] if len(args) > 2 else None
+    result = _orch.advance(target_state=target)
+    if result["ok"]:
+        print(result.get("message", "已推进"))
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_jump(args):
+    if len(args) < 3:
+        print("用法: python pipeline.py jump <状态ID>")
+        return
+    result = _orch.jump(target_state=args[2])
+    if result["ok"]:
+        print(f"✅ 已跳转到 {result['to']}")
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_undo(args=None):
+    result = _orch.undo()
+    if result["ok"]:
+        print(result.get("message", "已回退"))
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_reset(args=None):
+    result = _orch.reset()
+    if result["ok"]:
+        print(result["message"])
+    else:
+        print(f"❌ {result['error']}")
+
+
+def cmd_prompt(args=None):
+    """显示当前状态的入口话术"""
+    project_name = get_current_project()
+    if not project_name:
+        print("未选择项目")
+        return
+    state = load_state(project_name)
+    current = state.get("current_micro_state", "concept-init")
+    module_name = current.split("-")[0] if "-" in current else current
+    mod = _registry.get(module_name)
+    if mod:
+        print(f"当前状态: {current}")
+        print(f"模块: {mod.description}")
+    else:
+        print(f"当前状态: {current}")
+
+
+def cmd_graph(args=None):
+    """显示模块依赖图"""
+    print("模块依赖图 (8 模块):\n")
+    for name, contract in _registry.all.items():
+        down = _registry.get_downstream(name)
+        up = _registry.get_upstream(name)
+        parts = [f"  {name}"]
+        if up:
+            parts.append(f"    ← 上游: {', '.join(up)}")
+        if down:
+            parts.append(f"    → 下游: {', '.join(down)}")
+        parts.append(f"    📝 {contract.description}")
+        print("\n".join(parts))
+        print()
+
+    order = _registry.get_stage_order()
+    print(f"执行顺序: {' → '.join(order)}")
+    print(f"校验: {'✅ 无警告' if not _registry.validate_all() else '⚠️ 有警告'}")
+
+
+def cmd_cleanup(args=None):
+    """删除当前论文项目的 LaTeX 编译垃圾文件"""
+    project_name = get_current_project()
+    if not project_name:
+        print("❌ 未选择项目，先使用 `use` 切换")
+        return
+    paper_dir = get_project_path(project_name) / "paper"
+    if not paper_dir.exists():
+        print(f"⚠️ 项目 '{project_name}' 无 paper/ 目录")
+        return
+
+    junk_exts = {".aux", ".bbl", ".blg", ".bcf", ".log", ".out", ".run.xml",
+                 ".toc", ".synctex.gz", ".fdb_latexmk", ".fls", ".lof", ".lot",
+                 ".nav", ".snm", ".vrb", ".brf", ".nlo", ".nls"}
+    deleted = []
+    for f in paper_dir.iterdir():
+        if f.suffix in junk_exts or f.name in ("texput.log", "compile.log", "xelatex_output.txt"):
+            f.unlink()
+            deleted.append(f.name)
+
+    # 清理 tables/ 子目录下的 .log 文件
+    tables_dir = paper_dir / "tables"
+    if tables_dir.exists():
+        for f in tables_dir.glob("*.log"):
+            f.unlink()
+            deleted.append(f"tables/{f.name}")
+
+    if deleted:
+        print(f"✅ 清理了 {len(deleted)} 个文件:")
+        for name in sorted(deleted):
+            print(f"   🗑️  {name}")
+    else:
+        print("✅ 无需清理")
+
+
+def cmd_states(args=None):
+    """列出所有模块的状态（简化版）"""
+    print("可用模块:\n")
+    for name, contract in sorted(_registry.all.items()):
+        states = ", ".join(contract.states) if contract.states else "(无子状态)"
+        print(f"  {name:15s} | {states}")
+
+
+def cmd_doctor(args=None):
+    """运行无依赖环境诊断。"""
+    from install.bootstrap import main as doctor_main
+
+    doctor_args = args[2:] if args else []
+    raise SystemExit(doctor_main(doctor_args))
+
+
+def cmd_inspect(args=None):
+    """只读扫描论文项目的完成度、阻塞项和下一行动。"""
+    from scripts.paper_state import main as inspect_main
+
+    inspect_args = args[2:] if args else []
+    raise SystemExit(inspect_main(inspect_args))
+
+
+def cmd_workflow(args=None):
+    """工作流生命周期命令: plan/commit/verify/recover/revisions。"""
+    import scripts.workflow as wf
+
+    sub = args[2] if args and len(args) > 2 else ""
+    if not sub:
+        print("用法: pp workflow <plan|commit|verify|recover|revisions> [参数]")
+        return
+
+    project_name = get_current_project()
+    if not project_name:
+        print("❌ 未选择项目")
+        sys.exit(1)
+
+    if sub == "plan":
+        module = args[3] if len(args) > 3 else ""
+        desc = args[4] if len(args) > 4 else ""
+        if not module:
+            print("用法: pp workflow plan <模块名> [描述]")
+            sys.exit(1)
+        result = wf.plan(project_name, module, desc)
+    elif sub == "commit":
+        module = args[3] if len(args) > 3 else ""
+        if not module:
+            print("用法: pp workflow commit <模块名>")
+            sys.exit(1)
+        # Read result JSON from stdin or pass empty
+        result = wf.commit_result(project_name, module, result={})
+    elif sub == "verify":
+        module = args[3] if len(args) > 3 else ""
+        if not module:
+            print("用法: pp workflow verify <模块名>")
+            sys.exit(1)
+        result = wf.verify(project_name, module, checks_passed=True)
+    elif sub == "recover":
+        result = wf.recover(project_name)
+    elif sub == "revisions":
+        project_dir = get_project_path(project_name)
+        revisions = wf.list_revisions(project_dir)
+        if not revisions:
+            print("暂无修订版本")
+            return
+        for rev in revisions[:10]:
+            print(f"  {rev['revision_id']}  {rev['label']}  ({rev['timestamp']})")
+        return
+    else:
+        print("用法: pp workflow <plan|commit|verify|recover|revisions> [参数]")
+        return
+
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result.get("ok"):
+        sys.exit(1)
+
+
+_COMMANDS = {
+    "list": cmd_list,
+    "new": cmd_new,
+    "use": cmd_use,
+    "status": cmd_status,
+    "advance": cmd_advance,
+    "jump": cmd_jump,
+    "undo": cmd_undo,
+    "reset": cmd_reset,
+    "prompt": cmd_prompt,
+    "graph": cmd_graph,
+    "states": cmd_states,
+    "cleanup": cmd_cleanup,
+    "doctor": cmd_doctor,
+    "inspect": cmd_inspect,
+    "workflow": cmd_workflow,
+    "help": lambda _: print("可用命令: " + ", ".join(sorted(_COMMANDS.keys())) + "\n\nCLI: pp <command>"),
+}
+
+
+def main():
+    if len(sys.argv) < 2:
+        cmd_status()
+        return
+
+    cmd = sys.argv[1]
+    if cmd in _COMMANDS:
+        _COMMANDS[cmd](sys.argv)
+    else:
+        print(f"未知命令: {cmd}")
+        print("可用命令: " + ", ".join(sorted(_COMMANDS.keys())))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

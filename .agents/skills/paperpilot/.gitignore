@@ -1,0 +1,125 @@
+# ========================
+# Data (all projects)
+# ========================
+papers/*/data/raw/*
+!papers/*/data/raw/.gitkeep
+papers/*/data/clean/*
+!papers/*/data/clean/.gitkeep
+
+# ========================
+# User paper projects (keep only demo-paper in repo)
+# ========================
+papers/*
+!papers/demo-paper/
+!papers/demo-paper/*
+
+# ========================
+# Pipeline state (machine-local)
+# ========================
+papers/*/pipeline_state.json
+papers/*/conversation.json
+papers/*/context/
+papers/*/.revisions/
+
+# ========================
+# Root-level temporary logs
+# ========================
+doctor_test.log
+
+# ========================
+# MCP working directories (machine-local)
+# ========================
+.playwright-mcp/
+
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+uv.lock
+
+# ========================
+# IDE
+# ========================
+.vscode/
+.idea/
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Agent-specific config (user-local, not project)
+# ========================
+.claude/
+.claude-plugin/
+.kiro/
+commands/
+hooks/
+
+# ========================
+# Pipeline state (machine-local, per project)
+# ========================
+config/
+.config/               # global installation mode config
+papers/*/pipeline_state.json
+current_project.json  # legacy, was in root
+papers/*/.cache/      # incremental execution hash cache
+
+# ========================
+# User custom templates (private, not tracked)
+# ========================
+templates/custom/*
+!templates/custom/README.md
+
+# ========================
+# Unfinished templates (local development)
+# ========================
+templates/presets/*.draft/
+
+# ========================
+# LaTeX build artifacts (presets)
+# ========================
+templates/presets/**/*.aux
+templates/presets/**/*.pdf
+
+# ========================
+# Other MCP working directories
+# ========================
+.understand-anything/
+
+# ========================
+# LaTeX build artifacts (all projects)
+# ========================
+papers/*/paper/*.aux
+papers/*/paper/*.bbl
+papers/*/paper/*.bcf
+papers/*/paper/*.blg
+papers/*/paper/*.fdb_latexmk
+papers/*/paper/*.fls
+papers/*/paper/*.out
+papers/*/paper/*.run.xml
+papers/*/paper/*.synctex.gz
+papers/*/paper/*.toc
+papers/*/paper/*.lof
+papers/*/paper/*.lot
+papers/*/paper/*.nlo
+papers/*/paper/*.nls
+papers/*/paper/*.brf
+papers/*/paper/*.nav
+papers/*/paper/*.snm
+papers/*/paper/*.vrb
+
+# Compiled PDF (all projects - source of truth is local compile)
+papers/*/paper/main.pdf
+
+
+# ========================
+# Archive (optional: archived projects not tracked in git)
+# ========================
+archive/
