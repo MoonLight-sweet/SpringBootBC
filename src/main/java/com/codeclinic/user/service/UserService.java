@@ -79,7 +79,7 @@ public class UserService {
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getEmail, email));
         long expiresInSeconds = resetProperties.getCodeExpiryMinutes() * 60L;
         if (user == null) {
-            return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds, null);
+            return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds);
         }
 
         PasswordResetCode latest = resetCodeMapper.selectOne(Wrappers.<PasswordResetCode>lambdaQuery()
