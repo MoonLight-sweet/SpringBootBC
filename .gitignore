@@ -1,0 +1,11 @@
+target/
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+data/
+postman/results/
+.playwright-cli/
+output/
+tmp/
