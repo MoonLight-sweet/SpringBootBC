@@ -1,0 +1,9 @@
+#!/bin/sh
+
+branch=$(git symbolic-ref --quiet --short HEAD)
+if [ -z "$branch" ]; then
+  exit 0
+fi
+
+echo "[CodeClinic] 自动同步 GitHub: $branch"
+git push origin "$branch"

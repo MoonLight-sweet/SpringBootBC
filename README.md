@@ -34,3 +34,7 @@ $env:DEEPSEEK_MODEL="deepseek-chat"
 ```
 
 核心接口包括用户注册登录、错题增删改查、分页搜索、AI分析、重新分析、分析历史、知识点列表和学习统计。所有需要登录的接口使用`Authorization: Bearer <token>`，错题查询会按当前用户隔离。
+
+## GitHub自动同步
+
+项目已绑定`https://github.com/MoonLight-sweet/SpringBootBC.git`。本地Git已配置提交后自动执行推送；网络或登录状态异常时，提交仍会保留在本地，网络恢复后再次提交即可触发同步。
