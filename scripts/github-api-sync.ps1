@@ -13,7 +13,7 @@ $tokenLine = $credential | Where-Object { $_ -like 'password=*' } | Select-Objec
 if (-not $tokenLine) {
     throw 'Windows Git凭据管理器中没有GitHub登录凭据。'
 }
-$token = $tokenLine.Substring('password='.Length)
+$token = $tokenLine.Substring(('password=').Length)
 $headers = @{
     Authorization = "Bearer $token"
     Accept = 'application/vnd.github+json'
