@@ -21,13 +21,28 @@ function Get-WorktreeState {
     return (git -c core.quotepath=false status --porcelain=v1 --untracked-files=all | Out-String).Trim()
 }
 
+function Invoke-NativeLogged {
+    param(
+        [string]$Command,
+        [string[]]$Arguments
+    )
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Command @Arguments 2>&1 | Out-File -LiteralPath $logFile -Append -Encoding UTF8
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 function Sync-PendingCommits {
     $branch = (git symbolic-ref --quiet --short HEAD 2>$null | Out-String).Trim()
     if (-not $branch) {
         return
     }
-    git fetch origin $branch *>> $logFile
-    if ($LASTEXITCODE -ne 0) {
+    $fetchExit = Invoke-NativeLogged -Command 'git' -Arguments @('fetch', 'origin', $branch)
+    if ($fetchExit -ne 0) {
         Write-SyncLog 'Could not refresh the remote branch. Push will be retried later.'
         return
     }
@@ -42,8 +57,8 @@ function Sync-PendingCommits {
         return
     }
     if ($ahead -gt 0) {
-        git push origin $branch *>> $logFile
-        if ($LASTEXITCODE -eq 0) {
+        $pushExit = Invoke-NativeLogged -Command 'git' -Arguments @('push', 'origin', $branch)
+        if ($pushExit -eq 0) {
             Write-SyncLog "Pushed $ahead pending commit(s) to GitHub."
         } else {
             Write-SyncLog 'Pending push failed and will be retried in one minute.'
@@ -85,8 +100,8 @@ try {
         }
 
         Write-SyncLog 'Stable changes detected. Running tests.'
-        & mvn -q test *>> $logFile
-        if ($LASTEXITCODE -ne 0) {
+        $testExit = Invoke-NativeLogged -Command 'mvn' -Arguments @('-q', 'test')
+        if ($testExit -ne 0) {
             Write-SyncLog 'Tests failed. Commit skipped until files change again.'
             $stableSince = (Get-Date).AddYears(1)
             continue
@@ -100,15 +115,15 @@ try {
             continue
         }
 
-        git add -A
-        if ($LASTEXITCODE -ne 0) {
+        $addExit = Invoke-NativeLogged -Command 'git' -Arguments @('add', '-A')
+        if ($addExit -ne 0) {
             Write-SyncLog 'Failed to stage changes.'
             $stableSince = (Get-Date).AddMinutes(1)
             continue
         }
         $message = "chore: auto sync $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-        git commit -m $message *>> $logFile
-        if ($LASTEXITCODE -ne 0) {
+        $commitExit = Invoke-NativeLogged -Command 'git' -Arguments @('commit', '-m', $message)
+        if ($commitExit -ne 0) {
             Write-SyncLog 'Automatic commit failed.'
             $stableSince = (Get-Date).AddMinutes(1)
             continue
