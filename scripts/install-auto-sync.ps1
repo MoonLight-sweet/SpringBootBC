@@ -8,6 +8,6 @@ $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa
 $action = New-ScheduledTaskAction -Execute $powerShell -Argument $arguments -WorkingDirectory $projectRoot
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description '检测CodeClinic项目修改，通过测试后自动提交并推送到GitHub。' -Force | Out-Null
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description 'Test stable CodeClinic changes, then commit and push them to GitHub.' -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
-Write-Output "自动同步任务已安装并启动：$taskName"
+Write-Output "Auto-sync task installed and started: $taskName"

@@ -25,12 +25,12 @@ try {
     if (Test-Path -LiteralPath $lockFile) {
         $existingPid = Get-Content -LiteralPath $lockFile -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($existingPid -and (Get-Process -Id $existingPid -ErrorAction SilentlyContinue)) {
-            Write-SyncLog "监控程序已在运行，PID=$existingPid"
+            Write-SyncLog "Watcher is already running. PID=$existingPid"
             exit 0
         }
     }
     Set-Content -LiteralPath $lockFile -Value $PID -Encoding ASCII
-    Write-SyncLog "自动提交监控已启动，PID=$PID"
+    Write-SyncLog "Auto-sync watcher started. PID=$PID"
 
     $lastState = Get-WorktreeState
     $stableSince = Get-Date
@@ -49,17 +49,17 @@ try {
             continue
         }
 
-        Write-SyncLog '检测到稳定修改，开始执行测试。'
+        Write-SyncLog 'Stable changes detected. Running tests.'
         & mvn -q test *>> $logFile
         if ($LASTEXITCODE -ne 0) {
-            Write-SyncLog '测试失败，本次不提交；文件再次变化后会重新测试。'
+            Write-SyncLog 'Tests failed. Commit skipped until files change again.'
             $stableSince = (Get-Date).AddYears(1)
             continue
         }
 
         $verifiedState = Get-WorktreeState
         if ($verifiedState -ne $currentState) {
-            Write-SyncLog '测试期间文件再次变化，等待下一次稳定后重试。'
+            Write-SyncLog 'Files changed during testing. Waiting for a stable state.'
             $lastState = $verifiedState
             $stableSince = Get-Date
             continue
@@ -67,23 +67,23 @@ try {
 
         git add -A
         if ($LASTEXITCODE -ne 0) {
-            Write-SyncLog '暂存修改失败。'
+            Write-SyncLog 'Failed to stage changes.'
             $stableSince = (Get-Date).AddMinutes(1)
             continue
         }
         $message = "chore: auto sync $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
         git commit -m $message *>> $logFile
         if ($LASTEXITCODE -ne 0) {
-            Write-SyncLog '自动提交失败。'
+            Write-SyncLog 'Automatic commit failed.'
             $stableSince = (Get-Date).AddMinutes(1)
             continue
         }
-        Write-SyncLog "已提交并触发GitHub推送：$message"
+        Write-SyncLog "Committed and triggered GitHub push: $message"
         $lastState = Get-WorktreeState
         $stableSince = Get-Date
     }
 } catch {
-    Write-SyncLog "监控异常：$($_.Exception.Message)"
+    Write-SyncLog "Watcher error: $($_.Exception.Message)"
     throw
 } finally {
     if (Test-Path -LiteralPath $lockFile) {
