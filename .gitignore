@@ -1,6 +1,8 @@
 target/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
 *.iml
 *.log
 .env

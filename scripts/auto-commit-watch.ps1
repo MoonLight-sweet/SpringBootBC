@@ -11,6 +11,41 @@ $lockFile = Join-Path $outputDir 'watcher.lock'
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 Set-Location -LiteralPath $projectRoot
 
+function Set-ProjectJavaHome {
+    $pomPath = Join-Path $projectRoot 'pom.xml'
+    if (-not (Test-Path -LiteralPath $pomPath)) {
+        return
+    }
+    [xml]$pom = Get-Content -LiteralPath $pomPath -Raw
+    $requiredVersion = [string]$pom.project.properties.'java.version'
+    if (-not $requiredVersion) {
+        return
+    }
+    $candidates = @($env:JAVA_HOME)
+    foreach ($root in @('C:\Program Files\Eclipse Adoptium', 'C:\Program Files\Java')) {
+        if (Test-Path -LiteralPath $root) {
+            $candidates += Get-ChildItem -LiteralPath $root -Directory -Filter "jdk-$requiredVersion*" -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName
+        }
+    }
+    foreach ($candidate in ($candidates | Where-Object { $_ } | Select-Object -Unique)) {
+        $releaseFile = Join-Path $candidate 'release'
+        $javaExe = Join-Path $candidate 'bin\java.exe'
+        if ((Test-Path -LiteralPath $javaExe) -and (Test-Path -LiteralPath $releaseFile)) {
+            $releaseText = Get-Content -LiteralPath $releaseFile -Raw
+            $versionPattern = 'JAVA_VERSION="' + [regex]::Escape($requiredVersion) + '(?:\.|")'
+            if ($releaseText -match $versionPattern) {
+                $env:JAVA_HOME = $candidate
+                $env:Path = "$(Join-Path $candidate 'bin');$env:Path"
+                return
+            }
+        }
+    }
+    throw "JDK $requiredVersion is required but was not found."
+}
+
+Set-ProjectJavaHome
+
 function Write-SyncLog {
     param([string]$Message)
     $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Message"
