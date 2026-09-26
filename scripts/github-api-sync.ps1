@@ -11,9 +11,9 @@ $apiRoot = "https://api.github.com/repos/$owner/$repository"
 $credential = "protocol=https`nhost=github.com`n`n" | git credential fill 2>$null
 $tokenLine = $credential | Where-Object { $_ -like 'password=*' } | Select-Object -First 1
 if (-not $tokenLine) {
-    throw 'Windows Git凭据管理器中没有GitHub登录凭据。'
+    throw 'GitHub credentials are unavailable in Windows Git Credential Manager.'
 }
-$token = $tokenLine.Substring(('password=').Length)
+$token = $tokenLine.Substring(9)
 $headers = @{
     Authorization = "Bearer $token"
     Accept = 'application/vnd.github+json'
@@ -51,7 +51,7 @@ if ($Full) {
 }
 
 if (-not $changes.Count) {
-    Write-Output '没有需要同步的文件。'
+    Write-Output 'No files need to be synchronized.'
     exit 0
 }
 
@@ -85,4 +85,4 @@ Invoke-GitHubApi PATCH "$apiRoot/git/refs/heads/$branch" @{
     force = $false
 } | Out-Null
 
-Write-Output "GitHub同步完成: $($commit.sha)"
+Write-Output "GitHub sync complete: $($commit.sha)"
