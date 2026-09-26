@@ -77,6 +77,6 @@ mvn spring-boot:run
 
 ## GitHub自动同步
 
-　　项目已绑定`https://github.com/MoonLight-sweet/SpringBootBC.git`。本地Git已配置提交后自动执行推送；Git传输线路不可用时，会使用Windows凭据管理器中的登录状态通过GitHub官方API同步，不在项目中保存访问令牌。
+　　项目已绑定`https://github.com/MoonLight-sweet/SpringBootBC.git`。本地Git已配置提交后自动执行推送；Git传输线路临时不可用时会自动重试，后台任务也会每分钟补推尚未上传的提交。项目不保存GitHub访问令牌。
 
 　　Windows登录后会启动`CodeClinic-GitHub-AutoSync`计划任务。项目文件稳定20秒后自动运行测试，测试通过则创建提交并推送到当前GitHub分支；测试失败时保留修改但不提交。运行日志保存在`output/auto-sync/auto-sync.log`。

@@ -21,6 +21,36 @@ function Get-WorktreeState {
     return (git -c core.quotepath=false status --porcelain=v1 --untracked-files=all | Out-String).Trim()
 }
 
+function Sync-PendingCommits {
+    $branch = (git symbolic-ref --quiet --short HEAD 2>$null | Out-String).Trim()
+    if (-not $branch) {
+        return
+    }
+    git fetch origin $branch *>> $logFile
+    if ($LASTEXITCODE -ne 0) {
+        Write-SyncLog 'Could not refresh the remote branch. Push will be retried later.'
+        return
+    }
+    $counts = (git rev-list --left-right --count "HEAD...origin/$branch" | Out-String).Trim() -split '\s+'
+    if ($counts.Count -lt 2) {
+        return
+    }
+    $ahead = [int]$counts[0]
+    $behind = [int]$counts[1]
+    if ($behind -gt 0) {
+        Write-SyncLog "Remote branch is ahead by $behind commit(s); automatic push paused."
+        return
+    }
+    if ($ahead -gt 0) {
+        git push origin $branch *>> $logFile
+        if ($LASTEXITCODE -eq 0) {
+            Write-SyncLog "Pushed $ahead pending commit(s) to GitHub."
+        } else {
+            Write-SyncLog 'Pending push failed and will be retried in one minute.'
+        }
+    }
+}
+
 try {
     if (Test-Path -LiteralPath $lockFile) {
         $existingPid = Get-Content -LiteralPath $lockFile -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -34,8 +64,13 @@ try {
 
     $lastState = Get-WorktreeState
     $stableSince = Get-Date
+    $nextPushAttempt = Get-Date
     while ($true) {
         Start-Sleep -Seconds $PollSeconds
+        if ((Get-Date) -ge $nextPushAttempt) {
+            Sync-PendingCommits
+            $nextPushAttempt = (Get-Date).AddMinutes(1)
+        }
         $currentState = Get-WorktreeState
         if ($currentState -ne $lastState) {
             $lastState = $currentState

@@ -6,7 +6,16 @@ if [ -z "$branch" ]; then
 fi
 
 echo "[CodeClinic] 自动同步 GitHub: $branch"
-if ! git push origin "$branch"; then
-  echo "[CodeClinic] Git传输失败，改用GitHub API同步"
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/github-api-sync.ps1
-fi
+attempt=1
+while [ "$attempt" -le 3 ]; do
+  if git push origin "$branch"; then
+    echo "[CodeClinic] GitHub同步完成"
+    exit 0
+  fi
+  echo "[CodeClinic] 第${attempt}次推送失败，5秒后重试"
+  sleep 5
+  attempt=$((attempt + 1))
+done
+
+echo "[CodeClinic] 网络暂不可用，后台自动同步任务稍后继续补推"
+exit 0
