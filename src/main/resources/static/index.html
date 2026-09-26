@@ -3,35 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="#16705b">
+    <meta name="theme-color" content="#10221f">
     <title>CodeClinic · 编程错题助手</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/theme.css">
+    <script>document.documentElement.dataset.theme=localStorage.getItem('cc_theme')||'light';</script>
     <script defer src="/assets/vendor/lucide.min.js"></script>
     <script defer src="/assets/app.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#content">跳至主要内容</a>
 <div id="auth-view" class="auth-layout hidden">
-    <section class="auth-card" aria-label="账户登录">
+    <section class="auth-showcase" aria-label="产品介绍">
+        <div class="auth-showcase-inner">
+            <a class="brand auth-brand" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>PROGRAMMING REVIEW LAB</small></span></a>
+            <div class="auth-copy">
+                <span class="auth-kicker"><i data-lucide="sparkles"></i>AI驱动的编程复盘空间</span>
+                <h1>把每一次报错，<br>变成下一次进步。</h1>
+                <p>保存出错现场、定位问题原因、沉淀相关知识点，让零散的调试经历成为清晰可复用的学习资产。</p>
+            </div>
+            <div class="code-preview" aria-label="AI分析示例">
+                <div class="code-preview-head"><span><i></i><i></i><i></i></span><em>ArrayPractice.java</em><b>AI分析完成</b></div>
+                <pre><code><span>int[]</span> nums = {1, 2, 3};
+System.out.println(nums[<mark>3</mark>]);</code></pre>
+                <div class="diagnosis"><i data-lucide="scan-search"></i><span><small>错误定位</small><strong>数组下标超出有效范围</strong></span><em>第2行</em></div>
+            </div>
+            <div class="auth-features"><span><i data-lucide="scan-line"></i>智能定位</span><span><i data-lucide="book-open-check"></i>知识沉淀</span><span><i data-lucide="chart-no-axes-combined"></i>进度追踪</span></div>
+        </div>
+    </section>
+    <section class="auth-panel">
+        <button class="icon-button theme-toggle auth-theme" type="button" aria-label="切换深浅色模式" title="切换深浅色模式"><i data-lucide="moon"></i></button>
+        <section id="auth-card" class="auth-card" aria-label="账户登录">
         <a class="brand auth-logo" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><strong>CodeClinic</strong></a>
-        <p class="auth-subtitle">编程错题助手</p>
+        <p class="auth-subtitle"><strong>欢迎使用</strong> 编程错题助手</p>
         <nav class="auth-tabs" aria-label="账户"><a href="#/login">登录</a><a href="#/register">注册</a></nav>
         <form id="login-form">
             <h1>欢迎回来</h1>
             <label>用户名<input name="username" autocomplete="username" required maxlength="30" placeholder="你的用户名"></label>
-            <label>密码<input name="password" type="password" autocomplete="current-password" required placeholder="输入密码"></label>
+            <label>密码<span class="password-input"><input name="password" type="password" autocomplete="current-password" required placeholder="输入密码"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>
+            <a class="forgot-link" href="#/forgot-password">忘记密码？</a>
             <button class="primary wide" type="submit">登录工作台 <i data-lucide="arrow-right"></i></button>
         </form>
         <form id="register-form" class="hidden">
             <h1>创建学习账户</h1>
             <label>用户名<input name="username" autocomplete="username" required minlength="3" maxlength="30" placeholder="3至30个字符"></label>
             <label>邮箱<input name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
-            <label>密码<input name="password" type="password" autocomplete="new-password" required minlength="6" maxlength="100" placeholder="至少6个字符"></label>
+            <label>密码<span class="password-input"><input name="password" type="password" autocomplete="new-password" required minlength="6" maxlength="64" placeholder="至少6个字符"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>
             <label>昵称<span class="optional">选填</span><input name="displayName" autocomplete="nickname" maxlength="50" placeholder="如何称呼你"></label>
             <button class="primary wide" type="submit">创建账户 <i data-lucide="arrow-right"></i></button>
         </form>
+        <form id="forgot-form" class="hidden">
+            <a class="auth-back" href="#/login"><i data-lucide="arrow-left"></i>返回登录</a>
+            <h1>找回密码</h1>
+            <p class="form-intro">输入注册邮箱获取验证码，再设置一个新密码。</p>
+            <label>注册邮箱<input id="reset-email" name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+            <button id="send-reset-code" class="secondary wide" type="button"><i data-lucide="send"></i>发送验证码</button>
+            <div id="reset-fields" class="reset-fields hidden">
+                <label>验证码<input name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6" placeholder="6位数字验证码"></label>
+                <label>新密码<span class="password-input"><input name="newPassword" type="password" autocomplete="new-password" required minlength="6" maxlength="64" placeholder="6至64个字符"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>
+                <p id="reset-code-note" class="reset-code-note" role="status"></p>
+                <button class="primary wide" type="submit">确认重置 <i data-lucide="check"></i></button>
+            </div>
+        </form>
         <p id="auth-message" class="form-message" role="status"></p>
+        <p class="auth-footnote"><i data-lucide="shield-check"></i>学习数据仅保存在你的个人空间</p>
+        </section>
     </section>
 </div>
 <div id="main-view" class="hidden">
@@ -47,22 +84,17 @@
         </nav>
         <div class="sidebar-bottom"><i data-lucide="code-xml"></i><span>从错误中，找到答案。<small>CodeClinic / 学习工作台</small></span></div>
     </aside>
+    <button id="sidebar-scrim" class="sidebar-scrim" type="button" aria-label="关闭导航"></button>
     <div class="main-shell">
         <header class="topbar">
-            <div class="breadcrumb"><span>学习空间</span><i data-lucide="chevron-right"></i><span id="page-name">学习总览</span></div>
-            <div class="top-actions"><span id="user-avatar" class="avatar"></span><span id="user-name"></span><button id="logout-btn" class="icon-button" title="退出登录" aria-label="退出登录"><i data-lucide="log-out"></i></button></div>
+            <div class="topbar-leading"><button id="sidebar-toggle" class="icon-button" type="button" aria-label="打开导航" aria-expanded="false"><i data-lucide="menu"></i></button><div class="breadcrumb"><span>学习空间</span><i data-lucide="chevron-right"></i><span id="page-name">学习总览</span></div></div>
+            <div class="top-actions"><span class="online-dot" aria-hidden="true"></span><span class="workspace-status">学习空间已同步</span><button class="icon-button theme-toggle" type="button" title="切换深浅色模式" aria-label="切换深浅色模式"><i data-lucide="moon"></i></button><span class="top-divider" aria-hidden="true"></span><span id="user-avatar" class="avatar"></span><span id="user-name"></span><button id="logout-btn" class="icon-button" title="退出登录" aria-label="退出登录"><i data-lucide="log-out"></i></button></div>
         </header>
         <main id="content" class="content" tabindex="-1"></main>
         <footer class="page-footer"><span>CodeClinic</span><span>记录 · 理解 · 复盘</span></footer>
     </div>
-    <nav class="mobile-nav" aria-label="移动端导航">
-        <a data-nav="overview" href="#/overview"><i data-lucide="layout-dashboard"></i><span>总览</span></a>
-        <a data-nav="questions" href="#/questions"><i data-lucide="files"></i><span>错题</span></a>
-        <a data-nav="knowledge" href="#/knowledge"><i data-lucide="network"></i><span>知识点</span></a>
-        <a data-nav="stats" href="#/stats"><i data-lucide="chart-no-axes-combined"></i><span>统计</span></a>
-    </nav>
 </div>
-<div id="toast" class="toast" role="status"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <dialog id="delete-dialog"><form method="dialog"><div class="dialog-icon"><i data-lucide="trash-2"></i></div><h2>删除这道错题？</h2><p>错题及关联分析记录将被删除，此操作无法撤销。</p><div class="dialog-actions"><button class="secondary" value="cancel">取消</button><button class="danger" value="confirm">确认删除</button></div></form></dialog>
 </body>
 </html>

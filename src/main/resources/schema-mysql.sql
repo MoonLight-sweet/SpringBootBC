@@ -7,6 +7,17 @@ CREATE TABLE IF NOT EXISTS app_user (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS password_reset_code (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    code_hash VARCHAR(100) NOT NULL,
+    expire_time TIMESTAMP NOT NULL,
+    used TINYINT(1) NOT NULL DEFAULT 0,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_reset_user_time (user_id, create_time),
+    CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS wrong_question (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,

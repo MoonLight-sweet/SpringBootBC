@@ -9,3 +9,5 @@ postman/results/
 .playwright-cli/
 output/
 tmp/
+.agents/
+graphify-out/
