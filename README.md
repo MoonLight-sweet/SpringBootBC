@@ -37,4 +37,4 @@ $env:DEEPSEEK_MODEL="deepseek-chat"
 
 ## GitHub自动同步
 
-项目已绑定`https://github.com/MoonLight-sweet/SpringBootBC.git`。本地Git已配置提交后自动执行推送；网络或登录状态异常时，提交仍会保留在本地，网络恢复后再次提交即可触发同步。
+项目已绑定`https://github.com/MoonLight-sweet/SpringBootBC.git`。本地Git已配置提交后自动执行推送；Git传输线路不可用时，会使用Windows凭据管理器中的登录状态通过GitHub官方API同步，不在项目中保存访问令牌。

@@ -6,4 +6,7 @@ if [ -z "$branch" ]; then
 fi
 
 echo "[CodeClinic] 自动同步 GitHub: $branch"
-git push origin "$branch"
+if ! git push origin "$branch"; then
+  echo "[CodeClinic] Git传输失败，改用GitHub API同步"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/github-api-sync.ps1
+fi
