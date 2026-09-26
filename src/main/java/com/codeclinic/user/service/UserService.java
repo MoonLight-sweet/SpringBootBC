@@ -107,8 +107,7 @@ public class UserService {
         resetCodeMapper.insert(resetCode);
         mailService.send(email, code);
 
-        return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds,
-                resetProperties.isDemoEnabled() ? code : null);
+        return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds);
     }
 
     @Transactional

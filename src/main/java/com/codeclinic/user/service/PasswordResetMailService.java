@@ -20,12 +20,9 @@ public class PasswordResetMailService {
     }
 
     public void send(String email, String code) {
-        if (properties.isDemoEnabled()) {
-            return;
-        }
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            throw new BusinessException("邮件服务未配置，请设置Spring Mail连接信息");
+            throw new BusinessException("邮件服务未配置，请先设置发件邮箱和邮箱授权码");
         }
         SimpleMailMessage message = new SimpleMailMessage();
         if (StringUtils.hasText(properties.getMailFrom())) {

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.password-reset")
 public class PasswordResetProperties {
-    private boolean demoEnabled = true;
     private int codeExpiryMinutes = 10;
     private String mailFrom;
 }

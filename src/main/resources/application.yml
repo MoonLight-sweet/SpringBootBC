@@ -30,7 +30,6 @@ app:
     secret: ${JWT_SECRET:code-clinic-local-secret-key-change-before-production}
     expiration-hours: 24
   password-reset:
-    demo-enabled: ${PASSWORD_RESET_DEMO_ENABLED:true}
     code-expiry-minutes: 10
     mail-from: ${MAIL_FROM:}
 

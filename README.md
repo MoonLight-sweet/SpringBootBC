@@ -37,21 +37,22 @@ $env:DEEPSEEK_MODEL="deepseek-chat"
 
 ## 找回密码配置
 
-　　找回密码采用注册邮箱验证码，验证码的加密结果保存在MySQL中，10分钟后失效，成功重置后立即作废。默认开启开发演示模式，验证码会显示在找回密码页面，便于本机调试。
+　　找回密码采用注册邮箱验证码。系统生成6位验证码后，通过配置的发件邮箱发送到用户注册邮箱；数据库只保存验证码的加密结果，验证码不会出现在接口响应、页面或日志中。验证码10分钟后失效，成功重置后立即作废。
 
-　　接入真实邮箱时关闭开发演示模式，并配置SMTP邮箱连接：
+　　启动项目前必须配置一个支持SMTP发送的邮箱账号和邮箱授权码。下面以使用465端口的邮箱服务为例，`SPRING_MAIL_PASSWORD`填写邮箱设置页面生成的授权码，不是邮箱登录密码：
 
 ```powershell
-$env:PASSWORD_RESET_DEMO_ENABLED="false"
 $env:SPRING_MAIL_HOST="smtp.example.com"
-$env:SPRING_MAIL_PORT="587"
+$env:SPRING_MAIL_PORT="465"
 $env:SPRING_MAIL_USERNAME="你的邮箱账号"
 $env:SPRING_MAIL_PASSWORD="你的邮箱授权码"
 $env:SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH="true"
-$env:SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"
+$env:SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE="true"
 $env:MAIL_FROM="你的发件邮箱"
 mvn spring-boot:run
 ```
+
+　　如果邮箱服务要求587端口，应将`SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE`删除，并设置`SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"`。未配置发件邮箱时，申请验证码接口会明确提示先配置发件邮箱和邮箱授权码，不会把验证码退回页面。
 
 ## 用户分类与权限分布
 
