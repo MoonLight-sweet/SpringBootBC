@@ -59,6 +59,13 @@ System.out.println(nums[<mark>3</mark>]);</code></pre>
             <p class="form-intro">输入注册邮箱获取验证码，再设置一个新密码。</p>
             <label>注册邮箱<input id="reset-email" name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
             <button id="send-reset-code" class="secondary wide" type="button"><i data-lucide="send"></i>发送验证码</button>
+            <section id="mail-setup" class="mail-setup hidden" aria-label="本机发件邮箱设置">
+                <div class="mail-setup-title"><i data-lucide="mail-cog"></i><span><strong>配置本机发件邮箱</strong><small>支持QQ、网易、Gmail和Outlook邮箱</small></span></div>
+                <label>发件邮箱<input id="mail-sender-email" type="email" autocomplete="username" required placeholder="用于发送验证码的邮箱"></label>
+                <label>邮箱授权码<input id="mail-authorization-code" type="password" autocomplete="current-password" required maxlength="128" placeholder="邮箱设置中生成的SMTP授权码"></label>
+                <p class="mail-setup-note">授权码只保存在本次服务运行的内存中，不写入数据库、日志或项目文件。</p>
+                <button id="save-mail-settings" class="primary wide" type="button"><i data-lucide="plug-zap"></i>验证配置并发送</button>
+            </section>
             <div id="reset-fields" class="reset-fields hidden">
                 <label>验证码<input name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6" placeholder="6位数字验证码"></label>
                 <label>新密码<span class="password-input"><input name="newPassword" type="password" autocomplete="new-password" required minlength="6" maxlength="64" placeholder="6至64个字符"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>

@@ -230,6 +230,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .reset-code-note { display: flex; align-items: center; gap: 9px; min-height: 42px; margin: 15px 0 2px; padding: 9px 11px; color: var(--green-deep); background: var(--green-soft); border: 1px solid color-mix(in srgb,var(--green) 22%,transparent); border-radius: var(--radius-sm); font-size: 12px; }
 .reset-code-note:empty { display: none; }
 .reset-code-note .lucide { width: 17px; flex: 0 0 auto; }
+.mail-setup { margin-top: 18px; padding: 18px; border: 1px solid color-mix(in srgb,var(--green) 24%,var(--line)); border-radius: var(--radius-md); background: var(--green-soft); }
+.mail-setup-title { display: flex; align-items: center; gap: 10px; color: var(--green-deep); }
+.mail-setup-title > .lucide { width: 20px; }
+.mail-setup-title span, .mail-setup-title strong, .mail-setup-title small { display: block; }
+.mail-setup-title small { margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 500; }
+.mail-setup label { margin-top: 12px; }
+.mail-setup-note { margin: 10px 0 0; color: var(--muted); font-size: 10px; line-height: 1.65; }
+.auth-card .mail-setup .primary { margin-top: 12px; }
 .reset-code-note strong { letter-spacing: .12em; }
 .auth-footnote { display: flex; justify-content: center; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; margin: 20px 0 0; }
 .auth-footnote .lucide { width: 14px; color: var(--green); }

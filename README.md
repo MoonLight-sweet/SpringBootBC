@@ -39,7 +39,9 @@ $env:DEEPSEEK_MODEL="deepseek-chat"
 
 　　找回密码采用注册邮箱验证码。系统生成6位验证码后，通过配置的发件邮箱发送到用户注册邮箱；数据库只保存验证码的加密结果，验证码不会出现在接口响应、页面或日志中。验证码10分钟后失效，成功重置后立即作废。
 
-　　启动项目前必须配置一个支持SMTP发送的邮箱账号和邮箱授权码。下面以使用465端口的邮箱服务为例，`SPRING_MAIL_PASSWORD`填写邮箱设置页面生成的授权码，不是邮箱登录密码：
+　　本机直接运行时，如果尚未配置发件邮箱，找回密码页会显示配置区域。填写QQ、网易、Gmail或Outlook发件邮箱及其SMTP授权码后，系统先连接邮箱服务器验证配置，再发送验证码。发件邮箱和授权码只保存在本次服务运行的内存中，服务停止后立即失效，不会写入数据库、日志或Git仓库。该配置入口只接受从运行服务的本机发起的请求。
+
+　　服务器部署或需要重启后继续使用时，应在启动前通过环境变量配置一个支持SMTP发送的邮箱账号和邮箱授权码。下面以使用465端口的邮箱服务为例，`SPRING_MAIL_PASSWORD`填写邮箱设置页面生成的授权码，不是邮箱登录密码：
 
 ```powershell
 $env:SPRING_MAIL_HOST="smtp.example.com"
@@ -52,7 +54,7 @@ $env:MAIL_FROM="你的发件邮箱"
 mvn spring-boot:run
 ```
 
-　　如果邮箱服务要求587端口，应将`SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE`删除，并设置`SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"`。未配置发件邮箱时，申请验证码接口会明确提示先配置发件邮箱和邮箱授权码，不会把验证码退回页面。
+　　如果邮箱服务要求587端口，应将`SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE`删除，并设置`SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"`。未配置发件邮箱时，申请验证码接口会引导本机用户完成临时配置，不会把验证码退回页面。
 
 ## 用户分类与权限分布
 
