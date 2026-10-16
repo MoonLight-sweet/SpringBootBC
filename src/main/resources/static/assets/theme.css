@@ -948,6 +948,8 @@ input, textarea, select { background: var(--surface-solid); color: var(--ink); }
 .progress-track { background: var(--line-soft); }
 .progress-track i, .bar-list i { background: var(--green); }
 .analysis-symbol { background: var(--green-soft); color: var(--green); }
+.analysis-summary > div { min-width: 0; }
+.analysis-summary h2, .analysis-summary code { display: block; max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
 .learning-note { color: var(--ink-2); background: var(--amber-soft); border-color: var(--line); }
 .learning-note p, html[data-theme="dark"] .learning-note p { color: var(--ink-2); }
 .toast { background: var(--green-dark); border-radius: var(--radius-sm); box-shadow: var(--shadow-hover); }
