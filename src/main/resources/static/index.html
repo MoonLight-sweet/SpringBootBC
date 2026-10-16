@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="#10221f">
+    <meta name="theme-color" content="#10162a">
     <title>CodeClinic · 编程错题助手</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/app.css">
@@ -17,26 +17,36 @@
 <div id="auth-view" class="auth-layout hidden">
     <section class="auth-showcase" aria-label="产品介绍">
         <div class="auth-showcase-inner">
-            <a class="brand auth-brand" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>PROGRAMMING REVIEW LAB</small></span></a>
+            <header class="auth-showcase-top">
+                <a class="brand auth-brand" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>代码诊疗与复盘空间</small></span></a>
+                <span class="auth-system-state"><i aria-hidden="true"></i>学习工作台已就绪</span>
+            </header>
             <div class="auth-copy">
-                <span class="auth-kicker"><i data-lucide="sparkles"></i>AI驱动的编程复盘空间</span>
-                <h1>把每一次报错，<br>变成下一次进步。</h1>
-                <p>保存出错现场、定位问题原因、沉淀相关知识点，让零散的调试经历成为清晰可复用的学习资产。</p>
+                <span class="auth-kicker"><i data-lucide="activity"></i>DEBUG · REVIEW · GROW</span>
+                <h1>让每一次报错，<br><span>都有清晰的复盘路径。</span></h1>
+                <p>记录出错现场，梳理问题原因，再把解决过程沉淀为可以反复查阅的个人知识。</p>
             </div>
-            <div class="code-preview" aria-label="AI分析示例">
-                <div class="code-preview-head"><span><i></i><i></i><i></i></span><em>ArrayPractice.java</em><b>AI分析完成</b></div>
-                <pre><code><span>int[]</span> nums = {1, 2, 3};
-System.out.println(nums[<mark>3</mark>]);</code></pre>
-                <div class="diagnosis"><i data-lucide="scan-search"></i><span><small>错误定位</small><strong>数组下标超出有效范围</strong></span><em>第2行</em></div>
+            <div class="code-preview" aria-label="错题诊断示例">
+                <div class="code-preview-head"><span><i></i><i></i><i></i></span><em>CASE 042 · ArrayPractice.java</em><b><i aria-hidden="true"></i>已定位</b></div>
+                <pre><code><span class="code-line"><span class="line-number">01</span><span><span class="code-type">int[]</span> nums = {1, 2, 3};</span></span>
+<span class="code-line is-error"><span class="line-number">02</span><span>System.out.println(nums[<mark>3</mark>]);</span></span></code></pre>
+                <div class="diagnosis"><span class="diagnosis-icon"><i data-lucide="scan-search"></i></span><span><small>问题原因</small><strong>数组下标超出有效范围</strong></span><em>建议改为nums[2]</em></div>
             </div>
-            <div class="auth-features"><span><i data-lucide="scan-line"></i>智能定位</span><span><i data-lucide="book-open-check"></i>知识沉淀</span><span><i data-lucide="chart-no-axes-combined"></i>进度追踪</span></div>
+            <div class="auth-features" aria-label="学习复盘流程">
+                <span><b>01</b><small>记录现场</small></span>
+                <i data-lucide="arrow-right"></i>
+                <span><b>02</b><small>定位原因</small></span>
+                <i data-lucide="arrow-right"></i>
+                <span><b>03</b><small>沉淀知识</small></span>
+            </div>
         </div>
     </section>
     <section class="auth-panel">
         <button class="icon-button theme-toggle auth-theme" type="button" aria-label="切换深浅色模式" title="切换深浅色模式"><i data-lucide="moon"></i></button>
         <section id="auth-card" class="auth-card" aria-label="账户登录">
-        <a class="brand auth-logo" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><strong>CodeClinic</strong></a>
-        <p class="auth-subtitle"><strong>欢迎使用</strong> 编程错题助手</p>
+        <div class="auth-card-meta"><span><i data-lucide="shield-check"></i>个人学习空间</span><code>SECURE / 01</code></div>
+        <a class="brand auth-logo" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>代码诊疗与复盘空间</small></span></a>
+        <p class="auth-subtitle"><strong>继续你的编程复盘</strong><span>登录、注册或找回账户，学习记录会留在你的个人空间。</span></p>
         <nav class="auth-tabs" aria-label="账户"><a href="#/login">登录</a><a href="#/register">注册</a></nav>
         <form id="login-form">
             <h1>欢迎回来</h1>
@@ -60,9 +70,9 @@ System.out.println(nums[<mark>3</mark>]);</code></pre>
             <label>注册邮箱<input id="reset-email" name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
             <button id="send-reset-code" class="secondary wide" type="button"><i data-lucide="send"></i>发送验证码</button>
             <section id="mail-setup" class="mail-setup hidden" aria-label="本机发件邮箱设置">
-                <div class="mail-setup-title"><i data-lucide="mail-cog"></i><span><strong>配置本机发件邮箱</strong><small>支持QQ、网易、Gmail和Outlook邮箱</small></span></div>
-                <label>发件邮箱<input id="mail-sender-email" type="email" autocomplete="username" required placeholder="用于发送验证码的邮箱"></label>
-                <label>邮箱授权码<input id="mail-authorization-code" type="password" autocomplete="current-password" required maxlength="128" placeholder="邮箱设置中生成的SMTP授权码"></label>
+                <div class="mail-setup-title"><i data-lucide="mail"></i><span><strong>配置本机发件邮箱</strong><small>支持QQ、网易、Gmail和Outlook邮箱</small></span></div>
+                <label>发件邮箱<input id="mail-sender-email" type="email" autocomplete="username" required disabled placeholder="用于发送验证码的邮箱"></label>
+                <label>邮箱授权码<input id="mail-authorization-code" type="password" autocomplete="current-password" required disabled maxlength="128" placeholder="邮箱设置中生成的SMTP授权码"></label>
                 <p class="mail-setup-note">授权码只保存在本次服务运行的内存中，不写入数据库、日志或项目文件。</p>
                 <button id="save-mail-settings" class="primary wide" type="button"><i data-lucide="plug-zap"></i>验证配置并发送</button>
             </section>
