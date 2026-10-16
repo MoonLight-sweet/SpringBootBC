@@ -1003,6 +1003,13 @@ html[data-theme="dark"] .ai-service-state.ready { color: #a8d5bd; }
 .auth-card .primary, .auth-card .primary:hover, .auth-card .primary:active { background: var(--green); box-shadow: none; transform: none; }
 .auth-card .primary:hover { background: var(--green-dark); }
 .auth-theme { color: var(--ink-2); background: var(--surface-solid); border-color: var(--line); backdrop-filter: none; }
+html[data-theme="dark"] .primary,
+html[data-theme="dark"] .sidebar-create,
+html[data-theme="dark"] .auth-card .primary { color: #fff; background: #486581; border-color: #486581; }
+html[data-theme="dark"] .primary:hover,
+html[data-theme="dark"] .sidebar-create:hover,
+html[data-theme="dark"] .auth-card .primary:hover { background: #5f7892; }
+html[data-theme="dark"] .auth-brand .brand-mark { background: #486581; }
 
 @media (max-width: 900px) {
     .auth-layout { padding: 20px; }
