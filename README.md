@@ -1,6 +1,6 @@
 # CodeClinic编程错题智能解析助手
 
-　　这是一个可直接运行的Spring Boot单体应用，包含REST API和桌面端中文Web工作台。工作台提供浅色与深色两套界面，不包含移动端应用或移动端专用导航。项目只使用MySQL，不包含H2依赖或本地文件数据库配置。默认连接本机MySQL的`code_clinic`数据库；默认开启本地模拟AI，配置`DEEPSEEK_API_KEY`并关闭`AI_MOCK_ENABLED`后即可调用DeepSeek兼容接口。
+　　这是一个可直接运行的Spring Boot单体应用，包含REST API和桌面端中文Web工作台。工作台提供浅色与深色两套界面，不包含移动端应用或移动端专用导航。项目只使用MySQL，不包含H2依赖或本地文件数据库配置。默认连接本机MySQL的`code_clinic`数据库，并通过Ollama调用本机`qwen3:8b`生成真实AI分析；也可以通过环境变量切换到DeepSeek兼容接口。
 
 ## 启动
 
@@ -28,9 +28,10 @@ CREATE DATABASE code_clinic CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ## AI配置
 
 ```powershell
-$env:AI_MOCK_ENABLED="false"
+$env:DEEPSEEK_BASE_URL="https://api.deepseek.com"
 $env:DEEPSEEK_API_KEY="你的密钥"
 $env:DEEPSEEK_MODEL="deepseek-chat"
+$env:AI_MOCK_ENABLED="false"
 ```
 
 　　核心接口包括用户注册登录、找回密码、错题增删改查、分页搜索、AI分析、重新分析、分析历史、知识点列表和学习统计。所有需要登录的接口使用`Authorization: Bearer <token>`，错题查询会按当前用户隔离。

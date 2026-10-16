@@ -36,9 +36,9 @@ app:
 ai:
   deepseek:
     api-key: ${DEEPSEEK_API_KEY:}
-    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
-    model: ${DEEPSEEK_MODEL:deepseek-chat}
-    mock-enabled: ${AI_MOCK_ENABLED:true}
+    base-url: ${DEEPSEEK_BASE_URL:http://127.0.0.1:11434/v1}
+    model: ${DEEPSEEK_MODEL:qwen3:8b}
+    mock-enabled: ${AI_MOCK_ENABLED:false}
     timeout-seconds: 35
     max-retries: 2
 

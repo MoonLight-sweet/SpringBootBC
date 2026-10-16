@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class DeepSeekClient {
         if (properties.isMockEnabled()) {
             return mockResponse(prompt);
         }
-        if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+        if (!isLocalEndpoint() && (properties.getApiKey() == null || properties.getApiKey().isBlank())) {
             throw new BusinessException(503, "AI服务未配置访问密钥");
         }
         RuntimeException last = null;
@@ -41,9 +42,11 @@ public class DeepSeekClient {
                         "messages", List.of(
                                 Map.of("role", "system", "content", "你是一名专业的编程教学助手。"),
                                 Map.of("role", "user", "content", prompt)));
-                JsonNode response = webClient.post()
-                        .uri("/chat/completions")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
+                WebClient.RequestBodySpec request = webClient.post().uri("/chat/completions");
+                if (properties.getApiKey() != null && !properties.getApiKey().isBlank()) {
+                    request.header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey());
+                }
+                JsonNode response = request
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(body)
                         .retrieve()
@@ -69,8 +72,13 @@ public class DeepSeekClient {
         return properties.isMockEnabled() ? properties.getModel() + "-local-demo" : properties.getModel();
     }
 
-    private String safeMessage(Exception exception) {
-        return exception == null || exception.getMessage() == null ? "请求失败" : exception.getMessage();
+    boolean isLocalEndpoint() {
+        try {
+            String host = URI.create(properties.getBaseUrl()).getHost();
+            return "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host) || "::1".equals(host);
+        } catch (RuntimeException exception) {
+            return false;
+        }
     }
 
     private String mockResponse(String prompt) {
