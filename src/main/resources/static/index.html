@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="#2b2636">
+    <meta name="theme-color" content="#334e68">
     <title>CodeClinic · 编程错题助手</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/app.css">
@@ -16,43 +16,29 @@
 <a class="skip-link" href="#content">跳至主要内容</a>
 <div id="auth-view" class="auth-layout hidden">
     <header class="auth-page-header">
-        <a class="brand auth-brand" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>个人代码复盘档案</small></span></a>
+        <a class="brand auth-brand" href="#/login"><span class="brand-mark"><i data-lucide="braces"></i></span><span><strong>CodeClinic</strong><small>编程错题助手</small></span></a>
         <div class="auth-page-tools">
-            <span class="auth-privacy"><i data-lucide="shield-check"></i>学习记录仅你可见</span>
+            <span class="auth-privacy"><i data-lucide="shield-check"></i>数据仅对当前账户可见</span>
             <button class="icon-button theme-toggle auth-theme" type="button" aria-label="切换深浅色模式" title="切换深浅色模式"><i data-lucide="moon"></i></button>
         </div>
     </header>
     <main class="auth-workspace">
         <section class="auth-showcase" aria-label="产品介绍">
             <div class="auth-showcase-inner">
-            <div class="auth-copy">
-                    <span class="auth-kicker"><i data-lucide="file-code-2"></i>PERSONAL CODE ARCHIVE</span>
-                    <h1>错误不会白费，<br><span>前提是你留下它。</span></h1>
-                    <p>CodeClinic把调试现场、问题原因和最终理解整理在一起，让今天卡住你的代码，成为明天能直接调用的经验。</p>
-            </div>
-                <section class="review-board" aria-label="错题复盘示例">
-                    <header class="review-board-head">
-                        <span><strong>复盘中的问题</strong><small>EXAMPLE RECORD</small></span>
-                        <em>02 / 06</em>
-                    </header>
-                    <article class="review-ticket">
-                        <div class="ticket-meta"><span>JAVA</span><code>ArrayPractice.java</code><em>边界问题</em></div>
-                        <h2>为什么索引3会让程序中断？</h2>
-                        <pre><code>System.out.println(nums[<mark>3</mark>]);</code></pre>
-                        <div class="ticket-finding"><i data-lucide="search"></i><span><small>关键结论</small><strong>长度为3的数组，最后一个有效索引是2</strong></span></div>
-                    </article>
-                    <div class="review-path" aria-label="复盘步骤">
-                        <span class="done"><b>01</b><small>保存现场</small></span><i data-lucide="arrow-right"></i>
-                        <span class="active"><b>02</b><small>解释原因</small></span><i data-lucide="arrow-right"></i>
-                        <span><b>03</b><small>形成记忆</small></span>
-                    </div>
-                </section>
-                <p class="auth-showcase-note"><i data-lucide="bookmark-check"></i>不是替你跳过思考，而是帮你保存真正想明白的过程。</p>
+                <div class="auth-copy">
+                    <span class="auth-kicker">CODECLINIC</span>
+                    <h1>整理错题，<br>理解原因。</h1>
+                    <p>记录代码、运行现象和预期结果，使用AI分析原因，并把结果留作复习资料。</p>
+                </div>
+                <div class="auth-feature-list" aria-label="主要功能">
+                    <article><span>01</span><div><strong>记录问题</strong><p>保存代码和错误信息</p></div></article>
+                    <article><span>02</span><div><strong>分析原因</strong><p>生成修改建议和参考代码</p></div></article>
+                    <article><span>03</span><div><strong>回顾知识</strong><p>沉淀知识点和历史记录</p></div></article>
+                </div>
             </div>
         </section>
         <section class="auth-panel">
             <div class="auth-panel-top">
-                <span>ACCOUNT ACCESS</span>
                 <nav class="auth-tabs" aria-label="账户"><a href="#/login">登录</a><a href="#/register">注册</a></nav>
             </div>
             <section id="auth-card" class="auth-card" aria-label="账户登录">
@@ -65,7 +51,7 @@
                     <label>用户名<input name="username" autocomplete="username" required maxlength="30" placeholder="输入你的用户名"></label>
                     <label>访问密码<span class="password-input"><input name="password" type="password" autocomplete="current-password" required placeholder="输入账户密码"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>
                     <a class="forgot-link" href="#/forgot-password">无法登录？</a>
-                    <button class="primary wide" type="submit">进入我的工作台 <i data-lucide="arrow-up-right"></i></button>
+                    <button class="primary wide" type="submit">登录 <i data-lucide="arrow-right"></i></button>
                 </form>
                 <form id="register-form" class="hidden">
                     <h1>创建账户</h1>
@@ -73,7 +59,7 @@
                     <label>注册邮箱<input name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
                     <label>访问密码<span class="password-input"><input name="password" type="password" autocomplete="new-password" required minlength="6" maxlength="64" placeholder="至少6个字符"><button class="password-toggle" type="button" aria-label="显示密码" title="显示密码"><i data-lucide="eye"></i></button></span></label>
                     <label>显示昵称<span class="optional">选填</span><input name="displayName" autocomplete="nickname" maxlength="50" placeholder="工作台如何称呼你"></label>
-                    <button class="primary wide" type="submit">建立我的档案 <i data-lucide="arrow-up-right"></i></button>
+                    <button class="primary wide" type="submit">创建账户 <i data-lucide="arrow-right"></i></button>
                 </form>
                 <form id="forgot-form" class="hidden">
                     <a class="auth-back" href="#/login"><i data-lucide="arrow-left"></i>返回账户登录</a>

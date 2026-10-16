@@ -68,6 +68,26 @@ class DeepSeekClientTest {
         assertThat(remote.isLocalEndpoint()).isFalse();
     }
 
+    @Test
+    void reportsConfiguredLocalModelAsAvailable() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/models", exchange -> {
+            byte[] response = "{\"data\":[{\"id\":\"qwen3:8b\"}]}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+
+        DeepSeekClient client = new DeepSeekClient(
+                properties("http://127.0.0.1:" + server.getAddress().getPort() + "/v1"),
+                WebClient.builder());
+
+        assertThat(client.status().available()).isTrue();
+        assertThat(client.status().model()).isEqualTo("qwen3:8b");
+    }
+
     private DeepSeekProperties properties(String baseUrl) {
         DeepSeekProperties properties = new DeepSeekProperties();
         properties.setBaseUrl(baseUrl);

@@ -1,6 +1,7 @@
 package com.codeclinic.analysis.service;
 
 import com.codeclinic.analysis.config.DeepSeekProperties;
+import com.codeclinic.analysis.vo.AiServiceStatusVO;
 import com.codeclinic.common.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,35 @@ public class DeepSeekClient {
 
     public String modelName() {
         return properties.isMockEnabled() ? properties.getModel() + "-local-demo" : properties.getModel();
+    }
+
+    public AiServiceStatusVO status() {
+        if (properties.isMockEnabled()) {
+            return new AiServiceStatusVO(true, modelName(), "演示分析服务可用");
+        }
+        if (!isLocalEndpoint() && (properties.getApiKey() == null || properties.getApiKey().isBlank())) {
+            return new AiServiceStatusVO(false, properties.getModel(), "AI服务未配置访问密钥");
+        }
+        try {
+            WebClient.RequestHeadersSpec<?> request = webClient.get().uri("/models");
+            if (properties.getApiKey() != null && !properties.getApiKey().isBlank()) {
+                request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey());
+            }
+            JsonNode response = request.retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .timeout(Duration.ofSeconds(Math.min(properties.getTimeoutSeconds(), 5)))
+                    .block();
+            boolean modelFound = response != null && response.path("data").isArray()
+                    && java.util.stream.StreamSupport.stream(response.path("data").spliterator(), false)
+                    .map(item -> item.path("id").asText())
+                    .anyMatch(properties.getModel()::equals);
+            return modelFound
+                    ? new AiServiceStatusVO(true, properties.getModel(), "AI分析服务可用")
+                    : new AiServiceStatusVO(false, properties.getModel(), "未找到已配置的AI模型");
+        } catch (RuntimeException exception) {
+            log.info("AI服务状态检查失败，异常类型={}", exception.getClass().getSimpleName());
+            return new AiServiceStatusVO(false, properties.getModel(), "AI分析服务暂时无法连接");
+        }
     }
 
     boolean isLocalEndpoint() {
