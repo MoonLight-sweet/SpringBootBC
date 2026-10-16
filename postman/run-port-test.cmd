@@ -1,8 +1,19 @@
 @echo off
 chcp 65001 >nul
 title CodeClinic Postman端口验收
-set "POSTMAN_CLI_ELECTRON=C:\Users\Moon\AppData\Local\Postman\app-12.28.2\Postman.exe"
-set "POSTMAN_CLI=C:\Users\Moon\AppData\Local\Postman\app-12.28.2\resources\data\postman-cli\bin\postman.cmd"
+set "POSTMAN_HOME=%LOCALAPPDATA%\Postman"
+set "POSTMAN_APP="
+for /f "delims=" %%D in ('dir /b /ad /o-n "%POSTMAN_HOME%\app-*" 2^>nul') do if not defined POSTMAN_APP set "POSTMAN_APP=%POSTMAN_HOME%\%%D"
+if not defined POSTMAN_APP (
+    echo 未找到Postman安装目录。
+    exit /b 1
+)
+set "POSTMAN_CLI_ELECTRON=%POSTMAN_APP%\Postman.exe"
+set "POSTMAN_CLI=%POSTMAN_APP%\resources\data\postman-cli\bin\postman.cmd"
+if not exist "%POSTMAN_CLI%" (
+    echo 当前Postman版本缺少命令行测试组件：%POSTMAN_APP%
+    exit /b 1
+)
 cd /d "%~dp0.."
 call "%POSTMAN_CLI%" collection run "postman\CodeClinic.postman_collection.json" --reporters cli,json --reporter-json-export "postman\results\postman-latest.json"
 echo.
