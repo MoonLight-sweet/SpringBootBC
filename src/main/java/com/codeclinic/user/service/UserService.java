@@ -19,6 +19,9 @@ import com.codeclinic.user.vo.UserVO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -33,17 +36,27 @@ public class UserService {
     private final JwtService jwtService;
     private final PasswordResetMailService mailService;
     private final PasswordResetProperties resetProperties;
+    private final LoginAttemptLimiter loginLimiter;
+    private final PasswordResetRequestLimiter resetLimiter;
+    private final JdbcTemplate jdbc;
+    private final String dummyPasswordHash;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public UserService(UserMapper userMapper, PasswordResetCodeMapper resetCodeMapper,
                        PasswordEncoder passwordEncoder, JwtService jwtService,
-                       PasswordResetMailService mailService, PasswordResetProperties resetProperties) {
+                       PasswordResetMailService mailService, PasswordResetProperties resetProperties,
+                       LoginAttemptLimiter loginLimiter, PasswordResetRequestLimiter resetLimiter,
+                       JdbcTemplate jdbc) {
         this.userMapper = userMapper;
         this.resetCodeMapper = resetCodeMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.mailService = mailService;
         this.resetProperties = resetProperties;
+        this.loginLimiter = loginLimiter;
+        this.resetLimiter = resetLimiter;
+        this.jdbc = jdbc;
+        this.dummyPasswordHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
     }
 
     @Transactional
@@ -65,21 +78,29 @@ public class UserService {
         return UserVO.from(user);
     }
 
-    public LoginVO login(LoginRequest request) {
-        User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, request.username().trim()));
-        if (user == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+    public LoginVO login(LoginRequest request, String remoteAddress) {
+        String account = request.username().trim();
+        loginLimiter.check(account, remoteAddress);
+        User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, account));
+        boolean valid = passwordEncoder.matches(request.password(), user == null ? dummyPasswordHash : user.getPasswordHash());
+        if (user == null || !valid) {
+            loginLimiter.failed(account, remoteAddress);
             throw new BusinessException(401, "用户名或密码错误");
         }
-        return new LoginVO(jwtService.createToken(user.getId(), user.getUsername()), UserVO.from(user));
+        loginLimiter.succeeded(account);
+        return new LoginVO(jwtService.createToken(user.getId(), user.getUsername(), user.getPasswordHash()), UserVO.from(user));
     }
 
     @Transactional
-    public PasswordResetCodeVO requestPasswordResetCode(PasswordResetCodeRequest request) {
+    public PasswordResetCodeVO requestPasswordResetCode(PasswordResetCodeRequest request, String remoteAddress) {
         String email = normalizeEmail(request.email());
+        resetLimiter.acquire(email, remoteAddress);
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getEmail, email));
         long expiresInSeconds = resetProperties.getCodeExpiryMinutes() * 60L;
-        if (user == null) {
-            return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds);
+        PasswordResetCodeVO response = new PasswordResetCodeVO(maskEmail(email), expiresInSeconds);
+        if (user == null || !mailService.isConfigured()) {
+            passwordEncoder.encode(String.format(Locale.ROOT, "%06d", secureRandom.nextInt(1_000_000)));
+            return response;
         }
 
         PasswordResetCode latest = resetCodeMapper.selectOne(Wrappers.<PasswordResetCode>lambdaQuery()
@@ -89,7 +110,8 @@ public class UserService {
         LocalDateTime now = LocalDateTime.now();
         if (latest != null && latest.getCreateTime() != null
                 && Duration.between(latest.getCreateTime(), now).getSeconds() < 60) {
-            throw new BusinessException("验证码发送过于频繁，请1分钟后再试");
+            passwordEncoder.encode(String.format(Locale.ROOT, "%06d", secureRandom.nextInt(1_000_000)));
+            return response;
         }
 
         resetCodeMapper.update(null, Wrappers.<PasswordResetCode>lambdaUpdate()
@@ -105,12 +127,16 @@ public class UserService {
         resetCode.setUsed(false);
         resetCode.setCreateTime(now);
         resetCodeMapper.insert(resetCode);
-        mailService.send(email, code);
-
-        return new PasswordResetCodeVO(maskEmail(email), expiresInSeconds);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                mailService.sendAsync(email, code);
+            }
+        });
+        return response;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = BusinessException.class)
     public void resetPassword(PasswordResetRequest request) {
         String email = normalizeEmail(request.email());
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getEmail, email));
@@ -121,9 +147,17 @@ public class UserService {
                 .eq(PasswordResetCode::getUserId, user.getId())
                 .eq(PasswordResetCode::getUsed, false)
                 .orderByDesc(PasswordResetCode::getCreateTime)
-                .last("LIMIT 1"));
+                .last("LIMIT 1 FOR UPDATE"));
         if (resetCode == null || resetCode.getExpireTime().isBefore(LocalDateTime.now())
-                || !passwordEncoder.matches(request.code(), resetCode.getCodeHash())) {
+                ) {
+            throw new BusinessException("验证码无效或已过期");
+        }
+        jdbc.update("INSERT IGNORE INTO password_reset_attempt(reset_code_id) VALUES (?)", resetCode.getId());
+        int allowed = jdbc.update("""
+                UPDATE password_reset_attempt SET attempts = attempts + 1
+                WHERE reset_code_id = ? AND attempts < 5
+                """, resetCode.getId());
+        if (allowed != 1 || !passwordEncoder.matches(request.code(), resetCode.getCodeHash())) {
             throw new BusinessException("验证码无效或已过期");
         }
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));

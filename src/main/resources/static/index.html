@@ -67,11 +67,13 @@
                     <p class="form-intro">先验证注册邮箱，再为账户设置新的访问密码。</p>
                     <label>注册邮箱<input id="reset-email" name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
                     <button id="send-reset-code" class="secondary wide" type="button"><i data-lucide="send"></i>发送邮箱验证码</button>
+                    <button id="open-mail-setup" class="text-link" type="button">本机管理员：配置发件邮箱</button>
                     <section id="mail-setup" class="mail-setup hidden" aria-label="本机发件邮箱设置">
                         <div class="mail-setup-title"><i data-lucide="mail"></i><span><strong>配置本机发件邮箱</strong><small>支持QQ、网易、Gmail和Outlook邮箱</small></span></div>
                         <label>发件邮箱<input id="mail-sender-email" type="email" autocomplete="username" required disabled placeholder="用于发送验证码的邮箱"></label>
                         <label>邮箱授权码<input id="mail-authorization-code" type="password" autocomplete="current-password" required disabled maxlength="128" placeholder="邮箱设置中生成的SMTP授权码"></label>
-                        <p class="mail-setup-note">授权码只保存在本次服务运行的内存中，不写入数据库、日志或项目文件。</p>
+                        <label>本机管理口令<input id="mail-setup-token" type="password" required disabled placeholder="启动服务时设置的MAIL_SETUP_TOKEN"></label>
+                        <p class="mail-setup-note">启动服务前设置MAIL_SETUP_TOKEN。本机管理口令与邮箱授权码只用于本次配置，不写入项目文件。</p>
                         <button id="save-mail-settings" class="primary wide" type="button"><i data-lucide="plug-zap"></i>验证配置并发送</button>
                     </section>
                     <div id="reset-fields" class="reset-fields hidden">
@@ -82,7 +84,7 @@
                     </div>
                 </form>
                 <p id="auth-message" class="form-message" role="status"></p>
-                <p class="auth-footnote"><i data-lucide="lock-keyhole"></i>登录信息会通过加密连接发送</p>
+                <p class="auth-footnote"><i data-lucide="lock-keyhole"></i>远程访问时请通过HTTPS连接</p>
             </section>
         </section>
     </main>
@@ -95,6 +97,7 @@
         <nav class="desktop-nav" aria-label="主导航">
             <a data-nav="overview" href="#/overview"><i data-lucide="layout-dashboard"></i>学习总览</a>
             <a data-nav="questions" href="#/questions"><i data-lucide="files"></i>我的错题</a>
+            <a data-nav="reviews" href="#/reviews"><i data-lucide="calendar-check"></i>复习计划</a>
             <a data-nav="knowledge" href="#/knowledge"><i data-lucide="network"></i>知识点</a>
             <a data-nav="stats" href="#/stats"><i data-lucide="chart-no-axes-combined"></i>学习统计</a>
         </nav>

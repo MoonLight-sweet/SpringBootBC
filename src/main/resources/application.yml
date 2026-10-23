@@ -7,11 +7,12 @@ spring:
   datasource:
     url: ${MYSQL_URL:jdbc:mysql://localhost:3306/code_clinic?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:123456}
+    username: ${MYSQL_USERNAME:}
+    password: ${MYSQL_PASSWORD:}
   sql:
     init:
-      mode: always
+      mode: ${SQL_INIT_MODE:always}
+      # 使用只具备数据读写权限的账号时，首次建表后设置SQL_INIT_MODE=never。
       encoding: UTF-8
       schema-locations: classpath:schema-mysql.sql
   jackson:
@@ -27,13 +28,16 @@ mybatis-plus:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:code-clinic-local-secret-key-change-before-production}
+    secret: ${JWT_SECRET:}
     expiration-hours: 24
   password-reset:
     code-expiry-minutes: 10
     mail-from: ${MAIL_FROM:}
+    setup-token: ${MAIL_SETUP_TOKEN:}
 
 ai:
+  daily-limit: ${AI_DAILY_LIMIT:20}
+  global-concurrency: ${AI_GLOBAL_CONCURRENCY:3}
   deepseek:
     api-key: ${DEEPSEEK_API_KEY:}
     base-url: ${DEEPSEEK_BASE_URL:http://127.0.0.1:11434/v1}

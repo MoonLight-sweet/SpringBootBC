@@ -18,16 +18,25 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
     private final UserService userService;
     private final PasswordResetMailService mailService;
+    private final String mailSetupToken;
 
-    public UserController(UserService userService, PasswordResetMailService mailService) {
+    public UserController(UserService userService, PasswordResetMailService mailService,
+                          @Value("${app.password-reset.setup-token:}") String mailSetupToken) {
         this.userService = userService;
         this.mailService = mailService;
+        this.mailSetupToken = mailSetupToken;
+        if (!mailSetupToken.isBlank() && mailSetupToken.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalArgumentException("MAIL_SETUP_TOKEN至少需要32字节随机值");
+        }
     }
 
     @PostMapping("/register")
@@ -36,14 +45,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ApiResult<LoginVO> login(@Valid @RequestBody LoginRequest request) {
-        return ApiResult.success(userService.login(request));
+    public ApiResult<LoginVO> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
+        return ApiResult.success(userService.login(request, servletRequest.getRemoteAddr()));
     }
 
     @PostMapping("/password/reset-code")
     public ApiResult<PasswordResetCodeVO> requestPasswordResetCode(
-            @Valid @RequestBody PasswordResetCodeRequest request) {
-        return ApiResult.success(userService.requestPasswordResetCode(request));
+            @Valid @RequestBody PasswordResetCodeRequest request, HttpServletRequest servletRequest) {
+        return ApiResult.success(userService.requestPasswordResetCode(request, servletRequest.getRemoteAddr()));
     }
 
     @PostMapping("/password/mail-settings")
@@ -52,6 +61,11 @@ public class UserController {
             HttpServletRequest servletRequest) {
         if (!isLoopbackAddress(servletRequest.getRemoteAddr())) {
             throw new BusinessException(403, "发件邮箱只能在运行服务的本机配置");
+        }
+        if (mailSetupToken.isBlank() || !MessageDigest.isEqual(
+                mailSetupToken.getBytes(StandardCharsets.UTF_8),
+                request.setupToken().getBytes(StandardCharsets.UTF_8))) {
+            throw new BusinessException(403, "本机发件邮箱管理口令无效");
         }
         mailService.configureForCurrentRun(request.email(), request.authorizationCode());
         return ApiResult.successMessage("发件邮箱配置成功");

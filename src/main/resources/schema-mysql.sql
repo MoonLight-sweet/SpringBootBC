@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS password_reset_code (
     CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS password_reset_attempt (
+    reset_code_id BIGINT PRIMARY KEY,
+    attempts INT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_reset_attempt_code FOREIGN KEY (reset_code_id) REFERENCES password_reset_code(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS wrong_question (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
@@ -81,4 +87,41 @@ CREATE TABLE IF NOT EXISTS analysis_record (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_record_question (wrong_question_id),
     CONSTRAINT fk_record_question FOREIGN KEY (wrong_question_id) REFERENCES wrong_question(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS question_review (
+    question_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    state VARCHAR(20) NOT NULL DEFAULT 'todo',
+    streak INT NOT NULL DEFAULT 0,
+    review_count INT NOT NULL DEFAULT 0,
+    next_review_at TIMESTAMP NULL,
+    last_review_at TIMESTAMP NULL,
+    KEY idx_review_due (user_id, state, next_review_at),
+    CONSTRAINT fk_review_question FOREIGN KEY (question_id) REFERENCES wrong_question(id) ON DELETE CASCADE,
+    CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS review_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    question_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    remembered TINYINT(1) NOT NULL,
+    note VARCHAR(500),
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_review_record_user (user_id, create_time),
+    CONSTRAINT fk_review_record_question FOREIGN KEY (question_id) REFERENCES wrong_question(id) ON DELETE CASCADE,
+    CONSTRAINT fk_review_record_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS analysis_feedback (
+    analysis_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    verdict VARCHAR(20) NOT NULL,
+    comment VARCHAR(1000),
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_feedback_user (user_id, verdict),
+    CONSTRAINT fk_feedback_analysis FOREIGN KEY (analysis_id) REFERENCES ai_analysis(id) ON DELETE CASCADE,
+    CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

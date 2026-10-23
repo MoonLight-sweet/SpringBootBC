@@ -13,3 +13,4 @@ output/
 tmp/
 .agents/
 graphify-out/
+experiments/results*.jsonl

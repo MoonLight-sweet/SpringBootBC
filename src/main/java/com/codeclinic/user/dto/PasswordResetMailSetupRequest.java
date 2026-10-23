@@ -10,6 +10,8 @@ public record PasswordResetMailSetupRequest(
         String email,
         @NotBlank(message = "邮箱授权码不能为空")
         @Size(max = 128, message = "邮箱授权码长度不能超过128个字符")
-        String authorizationCode
+        String authorizationCode,
+        @NotBlank(message = "管理口令不能为空")
+        String setupToken
 ) {
 }

@@ -8,17 +8,29 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PreDestroy;
 
 import jakarta.mail.MessagingException;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class PasswordResetMailService {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final PasswordResetProperties properties;
     private volatile JavaMailSender runtimeMailSender;
     private volatile String runtimeMailFrom;
+    private final ThreadPoolExecutor deliveryQueue = new ThreadPoolExecutor(2, 2, 0,
+            TimeUnit.SECONDS, new ArrayBlockingQueue<>(100), task -> {
+        Thread thread = new Thread(task, "password-reset-mail");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public PasswordResetMailService(ObjectProvider<JavaMailSender> mailSenderProvider,
                                     PasswordResetProperties properties) {
@@ -48,6 +60,29 @@ public class PasswordResetMailService {
         } catch (RuntimeException e) {
             throw new BusinessException("验证码邮件发送失败，请稍后重试");
         }
+    }
+
+    public boolean isConfigured() {
+        return runtimeMailSender != null || mailSenderProvider.getIfAvailable() != null;
+    }
+
+    public void sendAsync(String email, String code) {
+        try {
+            deliveryQueue.execute(() -> {
+                try {
+                    send(email, code);
+                } catch (RuntimeException e) {
+                    log.warn("密码重置邮件发送失败，异常类型={}", e.getClass().getSimpleName());
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            log.warn("密码重置邮件队列已满");
+        }
+    }
+
+    @PreDestroy
+    public void close() {
+        deliveryQueue.shutdown();
     }
 
     public synchronized void configureForCurrentRun(String email, String authorizationCode) {

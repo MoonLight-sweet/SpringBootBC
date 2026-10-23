@@ -19,11 +19,13 @@ $env:MYSQL_PASSWORD="你的密码"
 mvn spring-boot:run
 ```
 
-　　启动前通过`MYSQL_USERNAME`和`MYSQL_PASSWORD`设置本机MySQL账号，密码不会写入项目文件。首次启动前需要创建数据库：
+　　启动前必须通过`MYSQL_USERNAME`和`MYSQL_PASSWORD`设置MySQL账号，项目不再提供固定的root口令。首次启动前需要创建数据库：
 
 ```sql
 CREATE DATABASE code_clinic CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
+
+　　首次启动会执行`schema-mysql.sql`建表。建表完成后，可改用仅有本库数据读写权限的账号，并设置`SQL_INIT_MODE=never`，避免运行期间继续要求建表权限。为保证登录状态在服务重启后继续有效，应设置至少32字节的随机`JWT_SECRET`；未设置时系统每次启动生成临时密钥，重启会使已有登录状态失效。
 
 ## AI配置
 
@@ -34,13 +36,13 @@ $env:DEEPSEEK_MODEL="deepseek-chat"
 $env:AI_MOCK_ENABLED="false"
 ```
 
-　　核心接口包括用户注册登录、找回密码、错题增删改查、分页搜索、AI分析、重新分析、分析历史、知识点列表和学习统计。所有需要登录的接口使用`Authorization: Bearer <token>`，错题查询会按当前用户隔离。
+　　核心接口包括用户注册登录、找回密码、错题增删改查、分页搜索、AI分析、重新分析、分析历史、分析结果人工核验、错题复习记录、知识点列表和学习统计。所有需要登录的接口使用`Authorization: Bearer <token>`，错题查询会按当前用户隔离。
 
 ## 找回密码配置
 
 　　找回密码采用注册邮箱验证码。系统生成6位验证码后，通过配置的发件邮箱发送到用户注册邮箱；数据库只保存验证码的加密结果，验证码不会出现在接口响应、页面或日志中。验证码10分钟后失效，成功重置后立即作废。
 
-　　本机直接运行时，如果尚未配置发件邮箱，找回密码页会显示配置区域。填写QQ、网易、Gmail或Outlook发件邮箱及其SMTP授权码后，系统先连接邮箱服务器验证配置，再发送验证码。发件邮箱和授权码只保存在本次服务运行的内存中，服务停止后立即失效，不会写入数据库、日志或Git仓库。该配置入口只接受从运行服务的本机发起的请求。
+　　本机直接运行时，可以在找回密码页打开配置区域。启动前先设置至少32字节的随机`MAIL_SETUP_TOKEN`，然后填写管理口令、QQ/网易/Gmail/Outlook发件邮箱及其SMTP授权码。系统先连接邮箱服务器验证配置，再发送验证码。发件邮箱和授权码只保存在本次服务运行的内存中，服务停止后立即失效，不会写入数据库、日志或Git仓库。该配置入口只接受从运行服务的本机发起的请求。
 
 　　服务器部署或需要重启后继续使用时，应在启动前通过环境变量配置一个支持SMTP发送的邮箱账号和邮箱授权码。下面以使用465端口的邮箱服务为例，`SPRING_MAIL_PASSWORD`填写邮箱设置页面生成的授权码，不是邮箱登录密码：
 
@@ -55,7 +57,13 @@ $env:MAIL_FROM="你的发件邮箱"
 mvn spring-boot:run
 ```
 
-　　如果邮箱服务要求587端口，应将`SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE`删除，并设置`SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"`。未配置发件邮箱时，申请验证码接口会引导本机用户完成临时配置，不会把验证码退回页面。
+　　如果邮箱服务要求587端口，应将`SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE`删除，并设置`SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE="true"`。申请验证码接口对注册与未注册邮箱返回相同提示，不会把验证码退回页面。连续猜错5次后该验证码失效；请确认发件服务可用再申请。
+
+## 复习与实验
+
+　　错题复习页记录每次“已经记住”或“还需练习”，并安排1、3、7、14、30天后的回顾。分析页允许保存人工判断及依据。页面显示的参考代码尚未由系统自动运行，因此不能仅凭JSON结构完整就认定修改正确。
+
+　　[实验说明](experiments/README.md)提供150条可追溯Java候选案例、两种提示词对照工具和300行空白人工评分表。只有实际完成标注并运行对应测试的案例，才可在论文中计为已核验案例。AI默认每位用户每天最多20次分析、全局同时最多3次；可通过`AI_DAILY_LIMIT`和`AI_GLOBAL_CONCURRENCY`调整。当前额度按单个应用进程计数，多个实例部署时需要共享计数服务。
 
 ## 用户分类与权限分布
 

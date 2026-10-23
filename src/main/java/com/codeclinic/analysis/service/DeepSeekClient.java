@@ -20,6 +20,8 @@ import java.util.Map;
 public class DeepSeekClient {
     private final DeepSeekProperties properties;
     private final WebClient webClient;
+    private volatile AiServiceStatusVO cachedStatus;
+    private volatile long statusExpiresAt;
 
     public DeepSeekClient(DeepSeekProperties properties, WebClient.Builder builder) {
         this.properties = properties;
@@ -73,7 +75,15 @@ public class DeepSeekClient {
         return properties.isMockEnabled() ? properties.getModel() + "-local-demo" : properties.getModel();
     }
 
-    public AiServiceStatusVO status() {
+    public synchronized AiServiceStatusVO status() {
+        long now = System.nanoTime();
+        if (cachedStatus != null && now < statusExpiresAt) return cachedStatus;
+        cachedStatus = checkStatus();
+        statusExpiresAt = now + Duration.ofSeconds(15).toNanos();
+        return cachedStatus;
+    }
+
+    private AiServiceStatusVO checkStatus() {
         if (properties.isMockEnabled()) {
             return new AiServiceStatusVO(true, modelName(), "演示分析服务可用");
         }

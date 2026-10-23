@@ -33,13 +33,15 @@ public class AnalysisService {
     private final KnowledgeService knowledgeService;
     private final ObjectMapper objectMapper;
     private final DeepSeekProperties properties;
+    private final AiQuotaService quota;
     private final org.springframework.transaction.support.TransactionTemplate transaction;
 
     public AnalysisService(WrongQuestionMapper questionMapper, AiAnalysisMapper analysisMapper,
                            AnalysisRecordMapper recordMapper, PromptService promptService,
                            DeepSeekClient deepSeekClient, AiResultParser resultParser,
                            KnowledgeService knowledgeService, ObjectMapper objectMapper,
-                           DeepSeekProperties properties, org.springframework.transaction.PlatformTransactionManager manager) {
+                           DeepSeekProperties properties, AiQuotaService quota,
+                           org.springframework.transaction.PlatformTransactionManager manager) {
         this.questionMapper = questionMapper;
         this.analysisMapper = analysisMapper;
         this.recordMapper = recordMapper;
@@ -49,11 +51,21 @@ public class AnalysisService {
         this.knowledgeService = knowledgeService;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.quota = quota;
         this.transaction = new org.springframework.transaction.support.TransactionTemplate(manager);
     }
 
     public AnalysisResultVO analyze(Long questionId) {
         WrongQuestion question = ownedQuestion(questionId);
+        if (question.getStatus() != null && question.getStatus() == 1) {
+            throw new BusinessException(409, "该错题正在分析，请稍候");
+        }
+        try (AiQuotaService.Permit ignored = quota.acquire(CurrentUser.id())) {
+            return analyzeWithPermit(questionId, question);
+        }
+    }
+
+    private AnalysisResultVO analyzeWithPermit(Long questionId, WrongQuestion question) {
         int claimed = questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
                 .eq(WrongQuestion::getId, questionId).eq(WrongQuestion::getUserId, CurrentUser.id())
                 .ne(WrongQuestion::getStatus, 1).set(WrongQuestion::getStatus, 1)
