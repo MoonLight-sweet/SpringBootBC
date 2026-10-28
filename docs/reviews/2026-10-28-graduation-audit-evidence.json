@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-28",
+  "baseline": "4f4305835a5eb49c2277f17f220b90a9857439ba",
+  "tests": {
+    "tests": 16,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "annotation_rows": 300,
+  "annotation_nonempty": {
+    "case_id": 300,
+    "variant": 300,
+    "reviewer": 0,
+    "root_cause_correct": 0,
+    "fix_correct": 0,
+    "code_runs": 0,
+    "notes": 0
+  },
+  "planned_pages": 10,
+  "paragraph_pagination_controls_cleared": true,
+  "docx_sha256": "493c88f4b76dccfd09daff534300e28225b1122a8d2df1bc78f45e7e7e50a965",
+  "business_source_changed": false,
+  "postman_rerun": false,
+  "browser_end_to_end_rerun": false,
+  "editorial_review": "Checked for unsupported graduation guarantees, invented completion percentages, and vague optimization tasks; each finding names behavior, evidence and acceptance. No additional stylistic edits proposed.",
+  "rendered_pages": 10,
+  "visually_inspected_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "toc_page_numbers_verified": true,
+  "body_font": "宋体 12pt",
+  "heading_font": "宋体 15pt bold",
+  "body_first_line_indent": "24pt",
+  "numbered_paragraph_indent": "0pt",
+  "title_border_removed": true
+}
