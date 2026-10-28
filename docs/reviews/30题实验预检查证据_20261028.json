@@ -1,0 +1,26 @@
+{
+  "case_count": 30,
+  "scope": "first 30 unclassified candidates, javac compilation precheck only",
+  "java": "25",
+  "compile_pass": 30,
+  "compile_failed": 0,
+  "runtime_execution": false,
+  "error_category_verified": false,
+  "standard_answers_verified": false,
+  "llm_evaluations_performed": 0,
+  "opening_proposal_design": {
+    "case_count": 30,
+    "category_target_each": 10,
+    "conditions": 5,
+    "repetitions": 2,
+    "planned_model_calls": 300,
+    "human_reviewers": 2
+  },
+  "results_sha256": "2c97f34b8d8e28a576e70b3df4ad7a9933e131847d5dccf924b7a67b9f57b4a3",
+  "docx_sha256": "0f430676c440134048faeae88e963d7260759a644f77253c6e94b07921d1f668",
+  "additional_compile_error_candidates": 10,
+  "distinct_problem_ids": 10,
+  "reviewers_available": false,
+  "rendered_pages": 10,
+  "pagination_controls_cleared": true
+}
