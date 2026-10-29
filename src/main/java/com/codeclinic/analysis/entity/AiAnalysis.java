@@ -21,6 +21,7 @@ public class AiAnalysis {
     private String knowledgePoints;
     private String learningAdvice;
     private String modelName;
+    private String inputSnapshot;
     private Integer status;
     private LocalDateTime createTime;
 }

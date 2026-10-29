@@ -92,7 +92,7 @@ public class AnalysisService {
             String rawResponse = response;
             String savedPrompt = prompt;
             return transaction.execute(tx -> {
-                AiAnalysis analysis = saveAnalysis(questionId, parsed);
+                AiAnalysis analysis = saveAnalysis(question, parsed);
                 knowledgeService.bind(questionId, parsed.knowledgePoints());
                 saveRecord(questionId, savedPrompt, rawResponse, 1, null);
                 setAnalysisStatus(questionId, 2);
@@ -140,6 +140,17 @@ public class AnalysisService {
                 .stream().map(this::toVO).toList();
     }
 
+    public List<com.codeclinic.analysis.vo.AnalysisFailureVO> failures(Long questionId) {
+        ownedQuestion(questionId);
+        return recordMapper.selectList(Wrappers.<AnalysisRecord>lambdaQuery()
+                .eq(AnalysisRecord::getWrongQuestionId, questionId).eq(AnalysisRecord::getStatus, 0)
+                .orderByDesc(AnalysisRecord::getId)).stream()
+                .map(r -> new com.codeclinic.analysis.vo.AnalysisFailureVO(r.getId(), r.getCreateTime(),
+                        "上次分析因服务中断未完成，请重新分析".equals(r.getErrorMessage())
+                                ? "服务中断，分析未完成" : "分析未完成，请检查输入和模型服务后重试"))
+                .toList();
+    }
+
     private WrongQuestion ownedQuestion(Long id) {
         WrongQuestion question = questionMapper.selectOne(Wrappers.<WrongQuestion>lambdaQuery()
                 .eq(WrongQuestion::getId, id).eq(WrongQuestion::getUserId, CurrentUser.id()));
@@ -147,9 +158,9 @@ public class AnalysisService {
         return question;
     }
 
-    private AiAnalysis saveAnalysis(Long questionId, AiResultParser.ParsedAnalysis result) {
+    private AiAnalysis saveAnalysis(WrongQuestion question, AiResultParser.ParsedAnalysis result) {
         AiAnalysis analysis = new AiAnalysis();
-        analysis.setWrongQuestionId(questionId);
+        analysis.setWrongQuestionId(question.getId());
         analysis.setErrorType(result.errorType());
         analysis.setErrorLocation(result.errorLocation());
         analysis.setErrorReason(result.errorReason());
@@ -157,6 +168,12 @@ public class AnalysisService {
         analysis.setCorrectCode(result.correctCode());
         try {
             analysis.setKnowledgePoints(objectMapper.writeValueAsString(result.knowledgePoints()));
+            WrongQuestion snapshot = new WrongQuestion();
+            snapshot.setTitle(question.getTitle()); snapshot.setDescription(question.getDescription());
+            snapshot.setLanguage(question.getLanguage()); snapshot.setCode(question.getCode());
+            snapshot.setErrorMessage(question.getErrorMessage()); snapshot.setActualOutput(question.getActualOutput());
+            snapshot.setExpectedOutput(question.getExpectedOutput());
+            analysis.setInputSnapshot(objectMapper.writeValueAsString(snapshot));
         } catch (JsonProcessingException e) {
             throw new BusinessException(500, "知识点保存失败");
         }
@@ -184,7 +201,7 @@ public class AnalysisService {
             List<String> points = objectMapper.readValue(analysis.getKnowledgePoints(), new TypeReference<>() {});
             return new AnalysisResultVO(analysis.getId(), analysis.getErrorType(), analysis.getErrorLocation(),
                     analysis.getErrorReason(), analysis.getSuggestion(), analysis.getCorrectCode(), points,
-                    analysis.getLearningAdvice(), analysis.getModelName(), analysis.getCreateTime());
+                    analysis.getLearningAdvice(), analysis.getModelName(), analysis.getCreateTime(), analysis.getInputSnapshot());
         } catch (JsonProcessingException e) {
             throw new BusinessException(500, "分析结果读取失败");
         }

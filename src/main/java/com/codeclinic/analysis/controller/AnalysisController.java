@@ -30,6 +30,11 @@ public class AnalysisController {
         return ApiResult.success(analysisService.latest(questionId));
     }
 
+    @GetMapping("/{questionId}/failures")
+    public ApiResult<List<com.codeclinic.analysis.vo.AnalysisFailureVO>> failures(@PathVariable Long questionId) {
+        return ApiResult.success(analysisService.failures(questionId));
+    }
+
     @GetMapping("/{questionId}/history")
     public ApiResult<List<AnalysisResultVO>> history(@PathVariable Long questionId) {
         return ApiResult.success(analysisService.history(questionId));
