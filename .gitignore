@@ -14,3 +14,7 @@ tmp/
 .agents/
 graphify-out/
 experiments/results*.jsonl
+experiments/__pycache__/
+experiments/formal_*.jsonl
+experiments/formal_review/
+experiments/formal_summary/
