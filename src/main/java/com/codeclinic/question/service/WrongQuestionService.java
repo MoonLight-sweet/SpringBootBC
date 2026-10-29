@@ -59,23 +59,34 @@ public class WrongQuestionService {
 
     public WrongQuestionDetailVO detail(Long id) {
         WrongQuestion question = owned(id);
-        if (question.getStatus() == 1) throw new BusinessException(409, "正在分析，请完成后再修改");
         return new WrongQuestionDetailVO(WrongQuestionVO.from(question), analysisService.latestOrNull(id));
     }
 
     public void update(Long id, WrongQuestionRequest request) {
         WrongQuestion question = owned(id);
-        if (question.getStatus() == 1) throw new BusinessException(409, "正在分析，请完成后再删除");
         apply(question, request);
-        question.setStatus(0);
-        question.setUpdateTime(LocalDateTime.now());
-        questionMapper.updateById(question);
+        int updated = questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
+                .eq(WrongQuestion::getId, id).eq(WrongQuestion::getUserId, CurrentUser.id())
+                .ne(WrongQuestion::getStatus, 1)
+                .set(WrongQuestion::getTitle, question.getTitle())
+                .set(WrongQuestion::getDescription, question.getDescription())
+                .set(WrongQuestion::getLanguage, question.getLanguage())
+                .set(WrongQuestion::getCode, question.getCode())
+                .set(WrongQuestion::getErrorMessage, question.getErrorMessage())
+                .set(WrongQuestion::getActualOutput, question.getActualOutput())
+                .set(WrongQuestion::getExpectedOutput, question.getExpectedOutput())
+                .set(WrongQuestion::getUserNote, question.getUserNote())
+                .set(WrongQuestion::getStatus, 0).set(WrongQuestion::getUpdateTime, LocalDateTime.now()));
+        if (updated != 1) throw new BusinessException(409, "错题正在分析或已被删除，请刷新后重试");
     }
 
     @Transactional
     public void delete(Long id) {
         WrongQuestion question = owned(id);
-        questionMapper.deleteById(question.getId());
+        int deleted = questionMapper.delete(Wrappers.<WrongQuestion>lambdaQuery()
+                .eq(WrongQuestion::getId, question.getId()).eq(WrongQuestion::getUserId, CurrentUser.id())
+                .ne(WrongQuestion::getStatus, 1));
+        if (deleted != 1) throw new BusinessException(409, "错题正在分析或已被删除，请刷新后重试");
     }
 
     private WrongQuestion owned(Long id) {

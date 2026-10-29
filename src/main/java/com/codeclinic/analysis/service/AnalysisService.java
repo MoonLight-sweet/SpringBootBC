@@ -61,41 +61,48 @@ public class AnalysisService {
             throw new BusinessException(409, "该错题正在分析，请稍候");
         }
         try (AiQuotaService.Permit ignored = quota.acquire(CurrentUser.id())) {
-            return analyzeWithPermit(questionId, question);
+            return analyzeWithPermit(questionId);
         }
     }
 
-    private AnalysisResultVO analyzeWithPermit(Long questionId, WrongQuestion question) {
+    private AnalysisResultVO analyzeWithPermit(Long questionId) {
         int claimed = questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
                 .eq(WrongQuestion::getId, questionId).eq(WrongQuestion::getUserId, CurrentUser.id())
                 .ne(WrongQuestion::getStatus, 1).set(WrongQuestion::getStatus, 1)
                 .set(WrongQuestion::getUpdateTime, LocalDateTime.now()));
         if (claimed != 1) throw new BusinessException(409, "该错题正在分析，请稍候");
-        String prompt = promptService.buildPrompt(question);
+        String prompt = null;
         String response = null;
         log.info("开始进行AI错题分析，questionId={}", questionId);
         try {
+            WrongQuestion question = ownedQuestion(questionId);
+            prompt = promptService.buildPrompt(question);
             response = deepSeekClient.chat(prompt);
             AiResultParser.ParsedAnalysis parsed = resultParser.parse(response);
             String rawResponse = response;
+            String savedPrompt = prompt;
             return transaction.execute(tx -> {
                 AiAnalysis analysis = saveAnalysis(questionId, parsed);
                 knowledgeService.bind(questionId, parsed.knowledgePoints());
-                saveRecord(questionId, prompt, rawResponse, 1, null);
-                question.setStatus(2);
-                question.setUpdateTime(LocalDateTime.now());
-                questionMapper.updateById(question);
+                saveRecord(questionId, savedPrompt, rawResponse, 1, null);
+                setAnalysisStatus(questionId, 2);
                 return toVO(analysis);
             });
         } catch (Exception e) {
-            question.setStatus(3);
-            question.setUpdateTime(LocalDateTime.now());
-            questionMapper.updateById(question);
+            setAnalysisStatus(questionId, 3);
             saveRecord(questionId, prompt, response, 0, e.getMessage());
             log.warn("AI分析失败，questionId={}，异常类型={}", questionId, e.getClass().getSimpleName());
             if (e instanceof BusinessException businessException) throw businessException;
             throw new BusinessException(503, "AI分析服务暂时不可用");
         }
+    }
+
+    private void setAnalysisStatus(Long questionId, int status) {
+        int updated = questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
+                .eq(WrongQuestion::getId, questionId).eq(WrongQuestion::getUserId, CurrentUser.id())
+                .eq(WrongQuestion::getStatus, 1).set(WrongQuestion::getStatus, status)
+                .set(WrongQuestion::getUpdateTime, LocalDateTime.now()));
+        if (updated != 1) throw new BusinessException(409, "错题分析状态已改变，请刷新后重试");
     }
 
     public AnalysisResultVO latest(Long questionId) {
