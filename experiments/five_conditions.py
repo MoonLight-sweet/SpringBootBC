@@ -84,14 +84,97 @@ def blind(a):
             w=csv.DictWriter(f,fieldnames=fields);w.writeheader();w.writerows({"blind_id":r["blind_id"]} for r in public)
     print("评分者只接收review_outputs和各自评分表；PRIVATE_mapping由实验管理员保管。失败请求保留。")
 
+SCORE_FIELDS = ("root_cause_correct", "fix_correct", "knowledge_correct", "code_runs")
+
+
+def read_scores(path):
+    with Path(path).open(encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    if len({r["blind_id"] for r in rows}) != len(rows):
+        raise ValueError(f"评分表存在重复编号：{path}")
+    for row in rows:
+        for field in SCORE_FIELDS:
+            if row[field] not in ("", "0", "1"):
+                raise ValueError(f"{path} 的 {row['blind_id']} {field} 只能填0、1或留空")
+    return {r["blind_id"]: r for r in rows}
+
+
+def summarize(a):
+    runs = load(a.runs)
+    mapping_rows = json.loads(Path(a.mapping).read_text(encoding="utf-8"))
+    mapping = {r["blind_id"]: r for r in mapping_rows}
+    reviewer_a, reviewer_b = read_scores(a.reviewer_a), read_scores(a.reviewer_b)
+    ids = set(mapping)
+    if len(mapping) != len(runs) or set(reviewer_a) != ids or set(reviewer_b) != ids:
+        raise ValueError("运行记录、盲编号和两份评分表必须逐行对应")
+    by_run = {(r["case_id"], r["condition"], r["repeat"]): r for r in runs}
+    if len(by_run) != len(runs):
+        raise ValueError("运行记录存在重复请求")
+    if any((m["case_id"], m["condition"], m["repeat"]) not in by_run for m in mapping_rows):
+        raise ValueError("盲编号对应的运行记录不存在")
+    eligible = {bid for bid, m in mapping.items()
+                if not by_run[(m["case_id"], m["condition"], m["repeat"])]["error"]
+                and by_run[(m["case_id"], m["condition"], m["repeat"])].get("response")}
+    disagreed = []
+    agreement = {}
+    for field in SCORE_FIELDS:
+        paired = [(bid, reviewer_a[bid][field], reviewer_b[bid][field]) for bid in sorted(eligible)
+                  if reviewer_a[bid][field] != "" and reviewer_b[bid][field] != ""]
+        same = sum(x == y for _, x, y in paired)
+        agreement[field] = {"both_scored": len(paired), "same": same,
+                            "agreement_rate": round(same / len(paired), 4) if paired else None,
+                            "eligible_outputs": len(eligible), "missing_pair": len(eligible) - len(paired)}
+        disagreed.extend({"blind_id": bid, "field": field, "reviewer_A": x, "reviewer_B": y,
+                          "adjudicated": "", "reason": ""} for bid, x, y in paired if x != y)
+    out = Path(a.output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    with (out / "disagreements.csv").open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=("blind_id", "field", "reviewer_A", "reviewer_B", "adjudicated", "reason"))
+        writer.writeheader()
+        writer.writerows(disagreed)
+    summary = {"requests": len(runs), "request_failed": sum(bool(r["error"]) for r in runs),
+               "structure_valid": sum(bool(r["structure_valid"]) for r in runs),
+               "agreement_before_review": agreement, "disagreement_cells": len(disagreed)}
+    if a.adjudicated:
+        decisions = {}
+        with Path(a.adjudicated).open(encoding="utf-8-sig", newline="") as f:
+            for row in csv.DictReader(f):
+                key = (row["blind_id"], row["field"])
+                if key in decisions or row["adjudicated"] not in ("0", "1") or not row["reason"].strip():
+                    raise ValueError("复核表有重复、空结论或缺少依据")
+                decisions[key] = row["adjudicated"]
+        if set(decisions) != {(r["blind_id"], r["field"]) for r in disagreed}:
+            raise ValueError("复核表必须恰好覆盖全部分歧")
+        final = {}
+        for field in SCORE_FIELDS:
+            scored = []
+            for bid in eligible:
+                x, y = reviewer_a[bid][field], reviewer_b[bid][field]
+                if x == "" or y == "":
+                    continue
+                score = x if x == y else decisions[(bid, field)]
+                mapped = mapping[bid]
+                scored.append((mapped["condition"], int(score)))
+            final[field] = {condition: {"scored": sum(k == condition for k, _ in scored),
+                                        "correct": sum(k == condition and score == 1 for k, score in scored)}
+                            for condition in CONDITIONS}
+        summary["after_review"] = final
+    (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+
 def main():
     p=argparse.ArgumentParser();sub=p.add_subparsers(dest="cmd",required=True)
     r=sub.add_parser("run");r.add_argument("--manifest",required=True);r.add_argument("--output",required=True);r.add_argument("--formal",action="store_true");r.add_argument("--max-cases",type=int,default=1);r.add_argument("--seed",type=int,default=20261029);r.add_argument("--model",default="qwen3:8b");r.add_argument("--base-url",default="http://127.0.0.1:11434/v1");r.add_argument("--timeout",type=int,default=120)
     b=sub.add_parser("blind");b.add_argument("--runs",required=True);b.add_argument("--output",required=True)
+    s=sub.add_parser("summarize");s.add_argument("--runs",required=True);s.add_argument("--mapping",required=True)
+    s.add_argument("--reviewer-a",required=True);s.add_argument("--reviewer-b",required=True)
+    s.add_argument("--output-dir",required=True);s.add_argument("--adjudicated")
     a=p.parse_args()
     if a.cmd=="run":
         if a.formal and a.max_cases!=30: p.error("正式运行必须显式设置--max-cases 30")
         run(a)
-    else: blind(a)
+    elif a.cmd=="blind": blind(a)
+    else: summarize(a)
 
 if __name__=="__main__": main()
