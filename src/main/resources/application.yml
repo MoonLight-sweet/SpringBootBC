@@ -36,6 +36,8 @@ app:
     setup-token: ${MAIL_SETUP_TOKEN:}
 
 ai:
+  # 仅用于单实例部署；共享数据库的多实例必须关闭并采用任务归属恢复。
+  recover-on-startup: ${AI_RECOVER_ON_STARTUP:true}
   daily-limit: ${AI_DAILY_LIMIT:20}
   global-concurrency: ${AI_GLOBAL_CONCURRENCY:3}
   deepseek:
