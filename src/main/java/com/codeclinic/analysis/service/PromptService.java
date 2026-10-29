@@ -29,6 +29,7 @@ public class PromptService {
                 errorType：错误类型；errorLocation：具体代码位置；errorReason：错误产生原因；
                 suggestion：可操作的修改建议；correctCode：完整修改代码；
                 knowledgePoints：1到6个知识点组成的字符串数组；learningAdvice：针对本题的学习建议。
+                correctCode必须是完整代码，不能只返回语句片段、注释或省略号。对于Java题目，原代码若是完整类，保留类名和必要的方法签名；若只有语句片段，补成可保存为Main.java的public class Main，包含main方法和必要的import，使题目给定的预期结果可以离线验证。
                 """.formatted(safe(question.getLanguage()), safe(question.getTitle()), safe(question.getDescription()),
                 safe(question.getCode()), safe(question.getErrorMessage()), safe(question.getActualOutput()),
                 safe(question.getExpectedOutput()));
