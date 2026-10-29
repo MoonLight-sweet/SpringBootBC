@@ -23,14 +23,21 @@ public class ReviewController {
         return ApiResult.success(service.list(dueOnly));
     }
 
+    @GetMapping("/page")
+    public ApiResult<com.codeclinic.common.PageResult<Map<String, Object>>> page(
+            @RequestParam(defaultValue = "false") boolean dueOnly,
+            @RequestParam(defaultValue = "1") long page, @RequestParam(defaultValue = "20") long size) {
+        return ApiResult.success(service.page(dueOnly, page, size));
+    }
+
     @GetMapping("/summary")
     public ApiResult<Map<String, Object>> summary() {
         return ApiResult.success(service.summary());
     }
 
     @GetMapping("/{questionId}/history")
-    public ApiResult<List<Map<String, Object>>> history(@PathVariable long questionId) {
-        return ApiResult.success(service.history(questionId));
+    public ApiResult<List<Map<String, Object>>> history(@PathVariable long questionId, @RequestParam(defaultValue = "1") long page, @RequestParam(defaultValue = "20") long size) {
+        return ApiResult.success(service.history(questionId, page, size));
     }
 
     @PostMapping("/{questionId}")

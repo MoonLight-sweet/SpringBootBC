@@ -19,6 +19,13 @@ public class ReviewService {
     }
 
     public List<Map<String, Object>> list(boolean dueOnly) {
+        return page(dueOnly, 1, 100).records();
+    }
+
+    public com.codeclinic.common.PageResult<Map<String, Object>> page(boolean dueOnly, long page, long size) {
+        validatePage(page, size);
+        String condition = dueOnly ? " AND (r.next_review_at IS NULL OR r.next_review_at <= CURRENT_TIMESTAMP)" : "";
+        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM wrong_question q LEFT JOIN question_review r ON r.question_id=q.id WHERE q.user_id=?" + condition, Long.class, CurrentUser.id());
         String sql = """
                 SELECT q.id AS questionId, q.title, q.language,
                        COALESCE(r.state, 'todo') AS state, COALESCE(r.streak, 0) AS streak,
@@ -28,8 +35,8 @@ public class ReviewService {
                 FROM wrong_question q LEFT JOIN question_review r ON r.question_id = q.id
                 WHERE q.user_id = ?
                 """ + (dueOnly ? " AND (r.next_review_at IS NULL OR r.next_review_at <= CURRENT_TIMESTAMP)" : "")
-                + " ORDER BY CASE WHEN r.next_review_at IS NULL THEN 0 ELSE 1 END, r.next_review_at, q.id LIMIT 100";
-        return jdbc.queryForList(sql, CurrentUser.id());
+                + " ORDER BY CASE WHEN r.next_review_at IS NULL THEN 0 ELSE 1 END, r.next_review_at, q.id LIMIT ? OFFSET ?";
+        return new com.codeclinic.common.PageResult<>(jdbc.queryForList(sql, CurrentUser.id(), size, (page - 1) * size), total, page, size, (total + size - 1) / size);
     }
 
     public Map<String, Object> summary() {
@@ -44,11 +51,16 @@ public class ReviewService {
     }
 
     public List<Map<String, Object>> history(long questionId) {
+        return history(questionId, 1, 100);
+    }
+
+    public List<Map<String, Object>> history(long questionId, long page, long size) {
+        validatePage(page, size);
         requireOwned(questionId);
         return jdbc.queryForList("""
                 SELECT id, remembered, note, create_time AS createTime FROM review_record
-                WHERE question_id = ? AND user_id = ? ORDER BY id DESC LIMIT 100
-                """, questionId, CurrentUser.id());
+                WHERE question_id = ? AND user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?
+                """, questionId, CurrentUser.id(), size, (page - 1) * size);
     }
 
     @Transactional
@@ -79,6 +91,11 @@ public class ReviewService {
                 questionId, userId, remembered, note == null || note.isBlank() ? null : note.trim());
         return Map.of("questionId", questionId, "state", state, "streak", streak,
                 "nextReviewAt", next, "reviewCountAdded", 1);
+    }
+
+    private void validatePage(long page, long size) {
+        if (page < 1 || size < 1 || size > 100 || page > Long.MAX_VALUE / size)
+            throw new BusinessException("分页参数不正确");
     }
 
     private void requireOwned(long questionId) {
