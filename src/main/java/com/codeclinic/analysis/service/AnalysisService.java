@@ -66,11 +66,21 @@ public class AnalysisService {
     }
 
     private AnalysisResultVO analyzeWithPermit(Long questionId) {
-        int claimed = questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
+        Integer claimed = transaction.execute(tx -> {
+            WrongQuestion current = questionMapper.selectOne(Wrappers.<WrongQuestion>lambdaQuery()
+                    .eq(WrongQuestion::getId, questionId).eq(WrongQuestion::getUserId, CurrentUser.id()).last("FOR UPDATE"));
+            if (current == null || current.getStatus() == 1) return 0;
+            if (current.getStatus() == 0) {
+                analysisMapper.update(null, Wrappers.<AiAnalysis>lambdaUpdate()
+                        .eq(AiAnalysis::getWrongQuestionId, questionId).eq(AiAnalysis::getStatus, 1).set(AiAnalysis::getStatus, 0));
+                knowledgeService.clear(questionId);
+            }
+            return questionMapper.update(null, Wrappers.<WrongQuestion>lambdaUpdate()
                 .eq(WrongQuestion::getId, questionId).eq(WrongQuestion::getUserId, CurrentUser.id())
                 .ne(WrongQuestion::getStatus, 1).set(WrongQuestion::getStatus, 1)
                 .set(WrongQuestion::getUpdateTime, LocalDateTime.now()));
-        if (claimed != 1) throw new BusinessException(409, "该错题正在分析，请稍候");
+        });
+        if (claimed == null || claimed != 1) throw new BusinessException(409, "该错题正在分析或已被删除，请刷新后重试");
         String prompt = null;
         String response = null;
         log.info("开始进行AI错题分析，questionId={}", questionId);
@@ -106,9 +116,10 @@ public class AnalysisService {
     }
 
     public AnalysisResultVO latest(Long questionId) {
-        ownedQuestion(questionId);
+        if (ownedQuestion(questionId).getStatus() == 0) throw new BusinessException(404, "该错题还没有有效分析结果");
         AiAnalysis analysis = analysisMapper.selectOne(Wrappers.<AiAnalysis>lambdaQuery()
                 .eq(AiAnalysis::getWrongQuestionId, questionId)
+                .eq(AiAnalysis::getStatus, 1)
                 .orderByDesc(AiAnalysis::getId).last("LIMIT 1"));
         if (analysis == null) throw new BusinessException(404, "该错题还没有分析结果");
         return toVO(analysis);
@@ -117,6 +128,7 @@ public class AnalysisService {
     public AnalysisResultVO latestOrNull(Long questionId) {
         AiAnalysis analysis = analysisMapper.selectOne(Wrappers.<AiAnalysis>lambdaQuery()
                 .eq(AiAnalysis::getWrongQuestionId, questionId)
+                .eq(AiAnalysis::getStatus, 1)
                 .orderByDesc(AiAnalysis::getId).last("LIMIT 1"));
         return analysis == null ? null : toVO(analysis);
     }

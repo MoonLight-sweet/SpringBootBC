@@ -21,8 +21,7 @@ public class KnowledgeService {
     }
 
     public void bind(Long questionId, List<String> names) {
-        relationMapper.delete(Wrappers.<WrongQuestionKnowledge>lambdaQuery()
-                .eq(WrongQuestionKnowledge::getWrongQuestionId, questionId));
+        clear(questionId);
         names.stream().map(String::trim).filter(name -> !name.isBlank()).distinct().limit(6).forEach(name -> {
             KnowledgePoint point = knowledgeMapper.selectOne(Wrappers.<KnowledgePoint>lambdaQuery()
                     .eq(KnowledgePoint::getName, name));
@@ -44,9 +43,14 @@ public class KnowledgeService {
         });
     }
 
+    public void clear(Long questionId) {
+        relationMapper.delete(Wrappers.<WrongQuestionKnowledge>lambdaQuery()
+                .eq(WrongQuestionKnowledge::getWrongQuestionId, questionId));
+    }
+
     public List<KnowledgePoint> list() {
         return knowledgeMapper.selectList(Wrappers.<KnowledgePoint>lambdaQuery()
-                .apply("id IN (SELECT r.knowledge_point_id FROM wrong_question_knowledge r JOIN wrong_question q ON q.id = r.wrong_question_id WHERE q.user_id = {0})",
+                .apply("id IN (SELECT r.knowledge_point_id FROM wrong_question_knowledge r JOIN wrong_question q ON q.id = r.wrong_question_id WHERE q.user_id = {0} AND q.status <> 0)",
                         com.codeclinic.security.CurrentUser.id())
                 .orderByAsc(KnowledgePoint::getName));
     }
