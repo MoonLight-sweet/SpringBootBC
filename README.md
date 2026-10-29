@@ -96,3 +96,5 @@ mvn spring-boot:run
 　　Windows登录后会启动`CodeClinic-GitHub-AutoSync`计划任务。项目文件稳定20秒后自动运行测试，测试通过则创建提交并推送到当前GitHub分支；测试失败时保留修改但不提交。运行日志保存在`output/auto-sync/auto-sync.log`。
 
 　　如需临时停止自动同步，可在PowerShell中执行`Stop-ScheduledTask -TaskName "CodeClinic-GitHub-AutoSync"`；再次启动时执行`Start-ScheduledTask -TaskName "CodeClinic-GitHub-AutoSync"`。
+
+　　单实例部署默认在启动时恢复遗留的分析中任务，将其标为失败并保存中断说明，允许重新分析。恢复在接收请求前完成；事务失败时启动失败。共享数据库运行多个实例时必须设置AI_RECOVER_ON_STARTUP=false，并另行实现按任务归属恢复，不能直接启用此单实例处理。
