@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "阶段一 恢复和筛选验收",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "item": [
+    {
+      "name": "登录",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/user/login",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"acceptanceuser\", \"password\": \"TestOnly-12345\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200)); const r=pm.response.json(); pm.test('响应 code 200',()=>pm.expect(r.code).to.eql(200)); pm.collectionVariables.set('token',r.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "启动后遗留状态已恢复",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/wrong-question/1",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "wrong-question",
+            "1"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('状态为失败且可查看',()=>pm.expect(r.data.question.status).eql(3));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "恢复后可重新分析",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/wrong-question/1/reanalyze",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "wrong-question",
+            "1",
+            "reanalyze"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('重新分析成功',()=>pm.expect(r.data.errorType).eql('运行时错误'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "错误类型筛选命中",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/wrong-question?errorType=%E8%BF%90%E8%A1%8C%E6%97%B6%E9%94%99%E8%AF%AF",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "wrong-question?errorType=%E8%BF%90%E8%A1%8C%E6%97%B6%E9%94%99%E8%AF%AF"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('筛选一条',()=>pm.expect(r.data.total).eql(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "错误类型筛选排除",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/wrong-question?errorType=NonExisting",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "wrong-question?errorType=NonExisting"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('筛选为空',()=>pm.expect(r.data.total).eql(0));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

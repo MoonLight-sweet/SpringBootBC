@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "阶段二 101题复习分页与备注验收",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://127.0.0.1:18080"
+    }
+  ],
+  "item": [
+    {
+      "name": "登录",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/user/login",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"acceptanceuser\", \"password\": \"TestOnly-12345\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200)); const r=pm.response.json(); pm.test('响应 code 200',()=>pm.expect(r.code).to.eql(200)); pm.collectionVariables.set('token',r.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第一页20条",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/page?page=1&size=20",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "page?page=1&size=20"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('101题共6页',()=>{pm.expect(r.data.total).eql(101);pm.expect(r.data.pages).eql(6);pm.expect(r.data.records.length).eql(20)});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第六页访问第101题",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/page?page=6&size=20",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "page?page=6&size=20"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('末页一条',()=>{pm.expect(r.data.records.length).eql(1);pm.expect(r.data.records[0].questionId).eql(101)});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "记录复习并保存备注",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/101",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "101"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"remembered\": true, \"note\": \"已理解边界，明天回看\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('第一次复习',()=>pm.expect(r.data.streak).eql(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "查看备注和时间",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/101/history?page=1&size=20",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "101",
+            "history?page=1&size=20"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));const r=pm.response.json();pm.test('code 200',()=>pm.expect(r.code).eql(200));pm.test('备注正确',()=>{pm.expect(r.data.length).eql(1);pm.expect(r.data[0].note).eql('已理解边界，明天回看');pm.expect(r.data[0].createTime).not.empty});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "重复提交被拒绝",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/101",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "101"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"remembered\": true}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409',()=>pm.response.to.have.status(409));const r=pm.response.json();pm.test('code 409',()=>pm.expect(r.code).eql(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "非法页码被拒绝",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/page?page=0",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "page?page=0"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400',()=>pm.response.to.have.status(400));const r=pm.response.json();pm.test('code 400',()=>pm.expect(r.code).eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "越权历史被拒绝",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/review/999999/history",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "review",
+            "999999",
+            "history"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404',()=>pm.response.to.have.status(404));const r=pm.response.json();pm.test('code 404',()=>pm.expect(r.code).eql(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
